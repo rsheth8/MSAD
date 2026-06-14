@@ -10,6 +10,9 @@ import { OptionsSection } from "@/components/OptionsSection";
 import { TickerSearch } from "@/components/TickerSearch";
 import { AccentPicker } from "@/components/AccentPicker";
 import { ExportButton } from "@/components/ExportButton";
+import { ModelingHub } from "@/components/ModelingHub";
+import { WatchlistButton } from "@/components/WatchlistButton";
+import { AmbientOrbs } from "@/components/AmbientOrbs";
 
 const SceneBackground = dynamic(() => import("@/components/SceneBackground"), {
   ssr: false,
@@ -71,6 +74,7 @@ export default function StockReportPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
       <SceneBackground accent={accent} />
+      <AmbientOrbs />
       <div className="texture-grid pointer-events-none fixed inset-0 -z-[5]" aria-hidden />
 
       <header className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -109,10 +113,9 @@ export default function StockReportPage() {
               type="button"
               onClick={() => setLearnMode(true)}
               aria-pressed={learnMode}
-              className={`rounded-full px-3 py-1 transition-colors ${
-                learnMode ? "text-white" : "text-muted hover:text-foreground"
+              className={`btn-pill rounded-full px-3 py-1 ${
+                learnMode ? "btn-pill-active" : "btn-pill-inactive"
               }`}
-              style={learnMode ? { background: "var(--accent)" } : undefined}
             >
               Learn
             </button>
@@ -120,8 +123,10 @@ export default function StockReportPage() {
               type="button"
               onClick={() => setLearnMode(false)}
               aria-pressed={!learnMode}
-              className={`rounded-full px-3 py-1 transition-colors ${
-                !learnMode ? "bg-foreground/90 text-white" : "text-muted hover:text-foreground"
+              className={`btn-pill rounded-full px-3 py-1 ${
+                !learnMode
+                  ? "bg-foreground/90 text-white shadow-md"
+                  : "btn-pill-inactive"
               }`}
             >
               Pro
@@ -129,6 +134,7 @@ export default function StockReportPage() {
           </div>
 
           <ExportButton targetId={EXPORT_ROOT_ID} ticker={ticker} disabled={!data || loading} />
+          <WatchlistButton ticker={ticker} />
           <TickerSearch
             key={ticker}
             initial={ticker}
@@ -151,8 +157,9 @@ export default function StockReportPage() {
       )}
 
       {data && !loading && (
-        <div id={EXPORT_ROOT_ID} className="space-y-6">
+        <div id={EXPORT_ROOT_ID} className="space-y-8">
           <ReportCardView data={data} learnMode={learnMode} />
+          <ModelingHub data={data} />
           <OptionsSection data={data} learnMode={learnMode} />
         </div>
       )}

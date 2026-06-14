@@ -5,7 +5,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { CATALOG_ROWS } from "@/lib/catalog";
 import { AccentPicker } from "./AccentPicker";
+import { AmbientOrbs } from "./AmbientOrbs";
 import { StockCarousel } from "./StockCarousel";
+import { WatchlistRow } from "./WatchlistRow";
 import { TickerSearch } from "./TickerSearch";
 import type { TileQuote } from "./StockTile";
 
@@ -40,10 +42,11 @@ export function HomeDashboard() {
   return (
     <>
       <SceneBackground accent={accent} />
+      <AmbientOrbs />
       <div className="texture-grid pointer-events-none fixed inset-0 -z-[5]" aria-hidden />
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
-        <header className="mb-10 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:mb-10 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2">
               <span
@@ -68,12 +71,20 @@ export function HomeDashboard() {
           </div>
         </header>
 
-        {/* Hero row — slightly larger tiles */}
-        <div className="mb-12">
+        <div className="hero-hint surface mx-auto mb-10 hidden max-w-xl rounded-2xl px-6 py-4 text-center lg:block">
+          <p className="text-sm leading-relaxed text-muted">
+            Pick a tile below to open a full report — grades, charts, calculators, and an options
+            lab. Everything is built to teach, not to tell you what to buy.
+          </p>
+        </div>
+
+        <WatchlistRow quotes={quotes} />
+
+        <div className="mb-14">
           <StockCarousel row={featured} quotes={quotes} large />
         </div>
 
-        <div className="space-y-10 pb-8">
+        <div className="space-y-12 pb-10">
           {CATALOG_ROWS.slice(1).map((row) => (
             <StockCarousel key={row.id} row={row} quotes={quotes} />
           ))}

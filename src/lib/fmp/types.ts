@@ -51,4 +51,5 @@ export interface FmpCashFlow {
 export interface FmpPriceBar {
   date: string;
   close: number;
+  volume?: number;
 }

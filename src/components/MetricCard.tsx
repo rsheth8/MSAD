@@ -1,28 +1,31 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { type KeyboardEvent } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { Metric } from "@/lib/types";
 import { formatMetricDisplay, formatSignedPercent } from "@/lib/format";
 import { metricRead } from "@/lib/analysis";
 import { METRIC_EXPLAINERS } from "@/lib/explanations";
 import { AnimatedNumber } from "./AnimatedNumber";
-import { Explainer } from "./Explainer";
 import { GlassCard } from "./GlassCard";
 
 /**
  * One metric tile: label, value, a "vs industry" pill, and — for beginners —
  * a plain-English read plus an expandable "What is this?" explainer.
  *
- * Sentiment: a metric is favorable when the direction of its difference from
- * the industry average matches `higherIsBetter` (e.g. a P/E *below* industry
- * is good because higher P/E is not better).
+ * When `expanded` / `onToggle` are provided, only one card should be expanded
+ * at a time (controlled by the parent accordion).
  */
 export function MetricCard({
   metric,
   learnMode = true,
+  expanded = false,
+  onToggle,
 }: {
   metric: Metric;
   learnMode?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 }) {
   const { label, display, vsIndustryPct, higherIsBetter, value } = metric;
   const unavailable = value === null || vsIndustryPct === null;
@@ -39,25 +42,39 @@ export function MetricCard({
 
   const read = metricRead(metric);
   const explainer = METRIC_EXPLAINERS[metric.key];
+  const expandable = learnMode && !!onToggle && !!explainer;
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 320, damping: 22 }}
-      className="h-full"
+      layout
+      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+      className="w-full"
     >
-      <GlassCard className="flex h-full flex-col p-4 transition-shadow duration-300 hover:[box-shadow:var(--shadow-card-hover)]">
-        <div className="text-[0.7rem] font-medium uppercase tracking-wider text-muted">
-          {label}
-        </div>
+      <GlassCard
+        className={`surface-interactive flex w-full flex-col p-4 ${
+          expandable ? "cursor-pointer" : ""
+        } ${expanded ? "ring-2 ring-accent/25" : ""}`}
+        {...(expandable
+          ? {
+              onClick: onToggle,
+              onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onToggle?.();
+                }
+              },
+              role: "button" as const,
+              tabIndex: 0,
+              "aria-expanded": expanded,
+            }
+          : {})}
+      >
+        <div className="text-[0.7rem] font-medium uppercase tracking-wider text-muted">{label}</div>
         <div className="mt-1 font-mono text-2xl font-semibold text-foreground tabular-nums">
           {value === null ? (
             display
           ) : (
-            <AnimatedNumber
-              value={value}
-              format={(n) => formatMetricDisplay(metric.key, n)}
-            />
+            <AnimatedNumber value={value} format={(n) => formatMetricDisplay(metric.key, n)} />
           )}
         </div>
         <div
@@ -73,15 +90,59 @@ export function MetricCard({
           )}
         </div>
 
-        {learnMode && read && (
+        {learnMode && read && !expandable && (
           <p className="mt-3 text-xs leading-relaxed text-muted">{read}</p>
         )}
 
-        {explainer && (
-          <div className="mt-auto pt-3">
-            <Explainer content={explainer} />
+        {expandable && !expanded && (
+          <div className="mt-3 flex items-center justify-between text-[0.65rem] font-medium text-muted">
+            <span>Tap to learn more</span>
+            <motion.span animate={{ rotate: 0 }} className="text-accent">
+              ↓
+            </motion.span>
           </div>
         )}
+
+        <AnimatePresence initial={false}>
+          {expandable && expanded && explainer && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mt-4 space-y-3 border-t border-border pt-4">
+                {read && <p className="text-xs leading-relaxed text-muted">{read}</p>}
+                <div className="space-y-2 rounded-xl border border-border bg-background p-3 text-xs leading-relaxed">
+                  <div>
+                    <p className="font-semibold text-foreground">What it is</p>
+                    <p className="text-muted">{explainer.what}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">What it means</p>
+                    <p className="text-muted">{explainer.meaning}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-accent">Watch out</p>
+                    <p className="text-muted">{explainer.watch}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle?.();
+                  }}
+                  className="btn-ghost interactive text-[0.65rem]"
+                >
+                  Collapse ↑
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </GlassCard>
     </motion.div>
   );

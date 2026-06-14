@@ -84,12 +84,21 @@ export const PRICE_EXPLAINER: ExplainerContent = {
 };
 
 export const CHART_EXPLAINER: ExplainerContent = {
-  title: "12-Month Performance",
-  what: "The stock's price over the last year, set to start at 100 so it's easy to compare against the S&P 500 (a basket of 500 big US companies that stands in for 'the market').",
+  title: "Interactive Performance Chart",
+  what: "Compare this stock's price against a benchmark (sector ETF, S&P 500, or a peer) over different time ranges. Lines start at 100 so you can see relative performance. Switch to Scatter mode to plot two fundamentals (like P/E vs ROE) for this company and its peers.",
   meaning:
-    "If the stock line is above the S&P 500 line, it beat the market over that period; below, it lagged.",
+    "In Compare mode, if the stock line stays above the benchmark, it outperformed over that period. Max drawdown shows the worst peak-to-trough drop. Volume bars (optional) show trading activity.",
   watch:
-    "Beating the market in one year doesn't guarantee it continues — past performance isn't a promise.",
+    "Past performance doesn't predict the future. Scatter plots are a snapshot — one good metric doesn't guarantee a good investment.",
+};
+
+export const SCATTER_EXPLAINER: ExplainerContent = {
+  title: "Fundamental Scatter Plot",
+  what: "Each dot is a company — the highlighted dot is this stock, grey dots are industry peers. Pick any two metrics for the X and Y axes to see how this company stacks up.",
+  meaning:
+    "Dots in the 'good' corner depend on which metrics you pick — e.g. low P/E + high ROE can mean cheaper quality. Clusters show what's normal for the industry.",
+  watch:
+    "Missing data hides some peers. Outliers can distort the picture — always read the actual numbers on the report card too.",
 };
 
 export const OPTION_EXPLAINER: ExplainerContent = {

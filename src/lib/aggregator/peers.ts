@@ -42,6 +42,38 @@ async function fetchPeerSymbols(ticker: string): Promise<string[]> {
     .slice(0, MAX_PEERS);
 }
 
+export interface PeerMetricRow {
+  symbol: string;
+  name: string;
+  raw: RawMetricValues;
+}
+
+/** Fundamentals for target + industry peers (scatter charts). */
+export async function fetchPeerMetricRows(
+  ticker: string,
+  companyName: string,
+): Promise<PeerMetricRow[]> {
+  const targetBundle = await fetchFundamentals(ticker);
+  const rows: PeerMetricRow[] = [
+    { symbol: ticker, name: companyName, raw: extractRawMetrics(targetBundle) },
+  ];
+
+  const peerSymbols = await fetchPeerSymbols(ticker);
+  const peerResults = await Promise.allSettled(
+    peerSymbols.map(async (symbol) => {
+      const bundle = await fetchFundamentals(symbol);
+      return { symbol, name: symbol, raw: extractRawMetrics(bundle) };
+    }),
+  );
+
+  for (const r of peerResults) {
+    if (r.status === "fulfilled") rows.push(r.value);
+  }
+  return rows;
+}
+
+export { fetchPeerSymbols };
+
 /** Pull fundamentals for industry peers and return averaged raw metric values. */
 export async function fetchPeerAverages(ticker: string): Promise<Partial<Record<keyof RawMetricValues, number | null>>> {
   const peerSymbols = await fetchPeerSymbols(ticker);

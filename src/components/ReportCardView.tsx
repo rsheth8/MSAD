@@ -1,15 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { LayoutGroup, motion } from "framer-motion";
 import type { Metric, ReportCard } from "@/lib/types";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
-import { CHART_EXPLAINER, PRICE_EXPLAINER } from "@/lib/explanations";
+import { PRICE_EXPLAINER } from "@/lib/explanations";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { Explainer } from "./Explainer";
 import { GlassCard } from "./GlassCard";
 import { GradePanel } from "./GradePanel";
 import { MetricCard } from "./MetricCard";
-import { StockChart } from "./StockChart";
+import { ChartPanel } from "./ChartPanel";
 
 function ChangeStat({ label, pct }: { label: string; pct: number }) {
   const up = pct >= 0;
@@ -41,14 +42,23 @@ function Cell({
   metric,
   learnMode,
   span = "",
+  expanded,
+  onToggle,
 }: {
   metric: Metric;
   learnMode: boolean;
   span?: string;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   return (
-    <div className={`h-full ${span}`}>
-      <MetricCard metric={metric} learnMode={learnMode} />
+    <div className={span}>
+      <MetricCard
+        metric={metric}
+        learnMode={learnMode}
+        expanded={expanded}
+        onToggle={onToggle}
+      />
     </div>
   );
 }
@@ -61,6 +71,15 @@ export function ReportCardView({
   learnMode?: boolean;
 }) {
   const m = Object.fromEntries(data.metrics.map((x) => [x.key, x])) as Record<string, Metric>;
+  const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
+
+  function toggleMetric(key: string) {
+    setExpandedMetric((current) => (current === key ? null : key));
+  }
+
+  useEffect(() => {
+    if (!learnMode) setExpandedMetric(null);
+  }, [learnMode]);
 
   return (
     <motion.div key={data.ticker} initial="hidden" animate="show" className="w-full">
@@ -104,38 +123,67 @@ export function ReportCardView({
 
         {/* Overall grade — the beginner's 5-second gist */}
         <motion.div variants={fadeUp} custom={2} className="mt-6">
-          <GradePanel data={data} />
+          <GradePanel data={data} learnMode={learnMode} />
         </motion.div>
 
-        {/* Chart hero */}
+        {/* Interactive chart */}
         <motion.div variants={fadeUp} custom={3} className="mt-4">
-          <GlassCard className="flex h-72 flex-col p-4 sm:h-80">
-            <div className="mb-2 text-center text-xs uppercase tracking-wider text-muted">
-              12-Month Performance · Stock vs S&amp;P 500
-            </div>
-            <div className="min-h-0 flex-1">
-              <StockChart series={data.series} />
-            </div>
-          </GlassCard>
-          <div className="mt-2 text-center">
-            <Explainer content={CHART_EXPLAINER} />
-          </div>
+          <ChartPanel data={data} learnMode={learnMode} />
         </motion.div>
 
-        {/* Bento metrics — varied sizes */}
-        <motion.div
-          variants={fadeUp}
-          custom={4}
-          className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4"
-        >
-          <Cell metric={m.roe} learnMode={learnMode} />
-          <Cell metric={m.pe} learnMode={learnMode} />
-          <Cell metric={m.evEbitda} learnMode={learnMode} />
-          <Cell metric={m.divYield} learnMode={learnMode} />
-          <Cell metric={m.opRevenue} learnMode={learnMode} span="col-span-2" />
-          <Cell metric={m.cashFlowChange} learnMode={learnMode} />
-          <Cell metric={m.assetLiability} learnMode={learnMode} />
+        {/* Bento metrics — only one card expands at a time */}
+        <LayoutGroup>
+          <motion.div
+            variants={fadeUp}
+            custom={4}
+            className="mt-4 grid grid-cols-2 items-start gap-4 lg:grid-cols-4"
+            layout
+          >
+          <Cell
+            metric={m.roe}
+            learnMode={learnMode}
+            expanded={expandedMetric === "roe"}
+            onToggle={() => toggleMetric("roe")}
+          />
+          <Cell
+            metric={m.pe}
+            learnMode={learnMode}
+            expanded={expandedMetric === "pe"}
+            onToggle={() => toggleMetric("pe")}
+          />
+          <Cell
+            metric={m.evEbitda}
+            learnMode={learnMode}
+            expanded={expandedMetric === "evEbitda"}
+            onToggle={() => toggleMetric("evEbitda")}
+          />
+          <Cell
+            metric={m.divYield}
+            learnMode={learnMode}
+            expanded={expandedMetric === "divYield"}
+            onToggle={() => toggleMetric("divYield")}
+          />
+          <Cell
+            metric={m.opRevenue}
+            learnMode={learnMode}
+            span="col-span-2"
+            expanded={expandedMetric === "opRevenue"}
+            onToggle={() => toggleMetric("opRevenue")}
+          />
+          <Cell
+            metric={m.cashFlowChange}
+            learnMode={learnMode}
+            expanded={expandedMetric === "cashFlowChange"}
+            onToggle={() => toggleMetric("cashFlowChange")}
+          />
+          <Cell
+            metric={m.assetLiability}
+            learnMode={learnMode}
+            expanded={expandedMetric === "assetLiability"}
+            onToggle={() => toggleMetric("assetLiability")}
+          />
         </motion.div>
+        </LayoutGroup>
 
         {/* Disclaimer + data source */}
         <div className="mt-8 border-t border-border pt-4 text-center text-[0.7rem] leading-relaxed text-muted">

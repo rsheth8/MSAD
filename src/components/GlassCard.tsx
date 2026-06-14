@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 /**
  * White card surface used for every panel in the dashboard.
@@ -7,9 +7,14 @@ import type { ReactNode } from "react";
 export function GlassCard({
   children,
   className = "",
+  ...props
 }: {
   children: ReactNode;
   className?: string;
-}) {
-  return <div className={`surface rounded-2xl ${className}`}>{children}</div>;
+} & HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={`surface rounded-2xl ${className}`} {...props}>
+      {children}
+    </div>
+  );
 }

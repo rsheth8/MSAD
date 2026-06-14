@@ -57,13 +57,19 @@ export function PayoffExplainer({
   price,
   call,
   put,
+  initialType = "call",
 }: {
   name: string;
   price: number;
   call: OptionContract;
   put: OptionContract;
+  initialType?: "call" | "put";
 }) {
-  const [type, setType] = useState<"call" | "put">("call");
+  const [type, setType] = useState<"call" | "put">(initialType);
+
+  useEffect(() => {
+    setType(initialType);
+  }, [initialType, call.strike, call.premium, put.strike, put.premium]);
   const contract = type === "call" ? call : put;
   const stats = optionStats(contract);
 
