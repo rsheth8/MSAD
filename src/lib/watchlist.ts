@@ -22,3 +22,10 @@ export function toggleWatchlist(ticker: string): string[] {
 export function isWatchlisted(ticker: string): boolean {
   return getWatchlist().includes(ticker.toUpperCase());
 }
+
+export function setWatchlist(tickers: string[]) {
+  const next = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
+  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+  window.dispatchEvent(new Event("amsad-watchlist"));
+  return next;
+}

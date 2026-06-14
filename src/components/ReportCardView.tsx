@@ -40,12 +40,14 @@ const fadeUp = {
 /** Bento cell: a metric with an optional column span. */
 function Cell({
   metric,
+  ticker,
   learnMode,
   span = "",
   expanded,
   onToggle,
 }: {
   metric: Metric;
+  ticker: string;
   learnMode: boolean;
   span?: string;
   expanded: boolean;
@@ -55,6 +57,7 @@ function Cell({
     <div className={span}>
       <MetricCard
         metric={metric}
+        ticker={ticker}
         learnMode={learnMode}
         expanded={expanded}
         onToggle={onToggle}
@@ -81,11 +84,20 @@ export function ReportCardView({
     if (!learnMode) setExpandedMetric(null);
   }, [learnMode]);
 
+  useEffect(() => {
+    function onExpand(e: Event) {
+      const key = (e as CustomEvent<string>).detail;
+      if (key) setExpandedMetric((c) => (c === key ? null : key));
+    }
+    window.addEventListener("amsad-expand-metric", onExpand);
+    return () => window.removeEventListener("amsad-expand-metric", onExpand);
+  }, []);
+
   return (
     <motion.div key={data.ticker} initial="hidden" animate="show" className="w-full">
       <GlassCard className="overflow-hidden p-6 sm:p-8">
         {/* Header */}
-        <motion.div variants={fadeUp} custom={0} className="text-center">
+        <motion.div variants={fadeUp} custom={0} className="text-center" id="section-price">
           <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {data.name}
           </h2>
@@ -122,12 +134,12 @@ export function ReportCardView({
         </motion.div>
 
         {/* Overall grade — the beginner's 5-second gist */}
-        <motion.div variants={fadeUp} custom={2} className="mt-6">
+        <motion.div variants={fadeUp} custom={2} className="mt-6" id="section-grade">
           <GradePanel data={data} learnMode={learnMode} />
         </motion.div>
 
         {/* Interactive chart */}
-        <motion.div variants={fadeUp} custom={3} className="mt-4">
+        <motion.div variants={fadeUp} custom={3} className="mt-4" id="section-chart">
           <ChartPanel data={data} learnMode={learnMode} />
         </motion.div>
 
@@ -138,33 +150,39 @@ export function ReportCardView({
             custom={4}
             className="mt-4 grid grid-cols-2 items-start gap-4 lg:grid-cols-4"
             layout
+            id="section-metrics"
           >
           <Cell
             metric={m.roe}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "roe"}
             onToggle={() => toggleMetric("roe")}
           />
           <Cell
             metric={m.pe}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "pe"}
             onToggle={() => toggleMetric("pe")}
           />
           <Cell
             metric={m.evEbitda}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "evEbitda"}
             onToggle={() => toggleMetric("evEbitda")}
           />
           <Cell
             metric={m.divYield}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "divYield"}
             onToggle={() => toggleMetric("divYield")}
           />
           <Cell
             metric={m.opRevenue}
+            ticker={data.ticker}
             learnMode={learnMode}
             span="col-span-2"
             expanded={expandedMetric === "opRevenue"}
@@ -172,12 +190,14 @@ export function ReportCardView({
           />
           <Cell
             metric={m.cashFlowChange}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "cashFlowChange"}
             onToggle={() => toggleMetric("cashFlowChange")}
           />
           <Cell
             metric={m.assetLiability}
+            ticker={data.ticker}
             learnMode={learnMode}
             expanded={expandedMetric === "assetLiability"}
             onToggle={() => toggleMetric("assetLiability")}

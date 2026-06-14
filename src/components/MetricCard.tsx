@@ -8,6 +8,7 @@ import { metricRead } from "@/lib/analysis";
 import { METRIC_EXPLAINERS } from "@/lib/explanations";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { GlassCard } from "./GlassCard";
+import { MetricTrendBadge } from "./MetricTrendBadge";
 
 /**
  * One metric tile: label, value, a "vs industry" pill, and — for beginners —
@@ -18,11 +19,13 @@ import { GlassCard } from "./GlassCard";
  */
 export function MetricCard({
   metric,
+  ticker,
   learnMode = true,
   expanded = false,
   onToggle,
 }: {
   metric: Metric;
+  ticker: string;
   learnMode?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
@@ -115,6 +118,7 @@ export function MetricCard({
             >
               <div className="mt-4 space-y-3 border-t border-border pt-4">
                 {read && <p className="text-xs leading-relaxed text-muted">{read}</p>}
+                <MetricTrendBadge ticker={ticker} metricKey={metric.key} />
                 <div className="space-y-2 rounded-xl border border-border bg-background p-3 text-xs leading-relaxed">
                   <div>
                     <p className="font-semibold text-foreground">What it is</p>

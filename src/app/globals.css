@@ -33,6 +33,23 @@
     0 20px 44px -22px color-mix(in srgb, var(--accent) 60%, rgba(17, 19, 23, 0.35));
 }
 
+/* Dark theme */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f1114;
+  --card: #1a1d23;
+  --foreground: #eef0f3;
+  --muted: #9aa1ad;
+  --muted-2: #6b7280;
+  --border: #2a2f38;
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 14px 32px -20px color-mix(in srgb, var(--accent) 35%, rgba(0, 0, 0, 0.5));
+  --shadow-card-hover:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 20px 44px -22px color-mix(in srgb, var(--accent) 45%, rgba(0, 0, 0, 0.55));
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-card: var(--card);

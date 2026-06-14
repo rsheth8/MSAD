@@ -25,7 +25,7 @@ export function ExportButton({
       const dataUrl = await toPng(node, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: "#f4f5f7",
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--background").trim() || "#f4f5f7",
       });
       const link = document.createElement("a");
       link.download = `amsad-${ticker.toLowerCase()}-report.png`;

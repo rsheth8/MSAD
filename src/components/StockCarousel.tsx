@@ -7,10 +7,14 @@ import { StockTile } from "./StockTile";
 export function StockCarousel({
   row,
   quotes,
+  sparklines = {},
+  pulseTickers = {},
   large = false,
 }: {
   row: CatalogRow;
   quotes: Record<string, TileQuote>;
+  sparklines?: Record<string, number[]>;
+  pulseTickers?: Record<string, boolean>;
   large?: boolean;
 }) {
   const loop = [...row.items, ...row.items];
@@ -37,6 +41,8 @@ export function StockCarousel({
               key={`${item.ticker}-${i}`}
               item={item}
               quote={quotes[item.ticker]}
+              sparkline={sparklines[item.ticker]}
+              pulse={pulseTickers[item.ticker]}
               large={large}
             />
           ))}

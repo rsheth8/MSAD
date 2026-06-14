@@ -225,7 +225,18 @@ export function OptionsSection({
             </div>
 
             {tab === "chain" && (
-              <div className="space-y-4">
+              <div className="space-y-4" id="section-options-chain">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${
+                      chain.isModelBased
+                        ? "bg-neutral/10 text-neutral"
+                        : "bg-up/10 text-up"
+                    }`}
+                  >
+                    {chain.isModelBased ? "Model chain · Black-Scholes" : "Live exchange chain"}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {chain.expirations.map((e) => (
                     <button
@@ -305,7 +316,9 @@ export function OptionsSection({
             )}
 
             {tab === "whatif" && (
-              <OptionsScenarioLab chain={chain} expiry={expiry} selected={selected} name={name} />
+              <div id="section-options-whatif">
+                <OptionsScenarioLab chain={chain} expiry={expiry} selected={selected} name={name} />
+              </div>
             )}
 
             {tab === "builder" && (
@@ -319,7 +332,7 @@ export function OptionsSection({
 
             {tab === "learn" && (
               <ExplainerGroup>
-                <div className="space-y-4">
+                <div className="space-y-4" id="section-options-learn">
                   <GlassCard className="p-4">
                     <div className="text-sm font-semibold">{OPTION_EXPLAINER.title}</div>
                     <p className="mt-1 text-xs text-muted">{OPTION_EXPLAINER.what}</p>

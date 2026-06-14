@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { CATALOG_ROWS } from "@/lib/catalog";
+import { allCatalogTickers, CATALOG_ROWS } from "@/lib/catalog";
 import { AccentPicker } from "./AccentPicker";
 import { AmbientOrbs } from "./AmbientOrbs";
+import { SectorHeatmap } from "./SectorHeatmap";
+import { SoundToggle, ThemeToggle } from "./OnboardingModal";
 import { StockCarousel } from "./StockCarousel";
 import { WatchlistRow } from "./WatchlistRow";
 import { TickerSearch } from "./TickerSearch";
@@ -19,6 +21,9 @@ export function HomeDashboard() {
   const router = useRouter();
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
   const [quotes, setQuotes] = useState<Record<string, TileQuote>>({});
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
+  const [pulseTickers, setPulseTickers] = useState<Record<string, boolean>>({});
+  const prevPrices = useRef<Record<string, number>>({});
 
   useEffect(() => {
     const saved = localStorage.getItem("amsad-accent");
@@ -31,9 +36,33 @@ export function HomeDashboard() {
   }, [accent]);
 
   useEffect(() => {
-    fetch("/api/quotes")
+    const loadQuotes = () =>
+      fetch("/api/quotes")
+        .then((r) => r.json())
+        .then((data: Record<string, TileQuote>) => {
+          setQuotes((prev) => {
+            const pulse: Record<string, boolean> = {};
+            for (const t of Object.keys(data)) {
+              const old = prevPrices.current[t] ?? prev[t]?.price;
+              const nw = data[t]?.price;
+              if (old != null && nw != null && old !== nw) pulse[t] = true;
+              if (nw != null) prevPrices.current[t] = nw;
+            }
+            if (Object.keys(pulse).length) setPulseTickers((p) => ({ ...p, ...pulse }));
+            return data;
+          });
+        })
+        .catch(() => {});
+
+    loadQuotes();
+    const id = setInterval(loadQuotes, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    fetch(`/api/sparklines?symbols=${allCatalogTickers().slice(0, 12).join(",")}`)
       .then((r) => r.json())
-      .then((data: Record<string, TileQuote>) => setQuotes(data))
+      .then(setSparklines)
       .catch(() => {});
   }, []);
 
@@ -65,7 +94,9 @@ export function HomeDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <SoundToggle />
             <AccentPicker value={accent} onChange={setAccent} />
             <TickerSearch onSubmit={(t) => router.push(`/stock/${t}`)} />
           </div>
@@ -74,19 +105,34 @@ export function HomeDashboard() {
         <div className="hero-hint surface mx-auto mb-10 hidden max-w-xl rounded-2xl px-6 py-4 text-center lg:block">
           <p className="text-sm leading-relaxed text-muted">
             Pick a tile below to open a full report — grades, charts, calculators, and an options
-            lab. Everything is built to teach, not to tell you what to buy.
+            lab. Press <kbd className="rounded bg-background px-1 font-mono text-[0.65rem]">/</kbd> to
+            search, <kbd className="rounded bg-background px-1 font-mono text-[0.65rem]">1–7</kbd> for
+            metrics on a report page.
           </p>
         </div>
 
+        <SectorHeatmap quotes={quotes} />
         <WatchlistRow quotes={quotes} />
 
         <div className="mb-14">
-          <StockCarousel row={featured} quotes={quotes} large />
+          <StockCarousel
+            row={featured}
+            quotes={quotes}
+            sparklines={sparklines}
+            pulseTickers={pulseTickers}
+            large
+          />
         </div>
 
         <div className="space-y-12 pb-10">
           {CATALOG_ROWS.slice(1).map((row) => (
-            <StockCarousel key={row.id} row={row} quotes={quotes} />
+            <StockCarousel
+              key={row.id}
+              row={row}
+              quotes={quotes}
+              sparklines={sparklines}
+              pulseTickers={pulseTickers}
+            />
           ))}
         </div>
       </main>

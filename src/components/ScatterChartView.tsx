@@ -30,12 +30,24 @@ function ScatterTooltip({
   return (
     <div className="surface rounded-lg px-3 py-2 text-xs">
       <div className="font-semibold text-foreground">
-        {p.ticker} {p.isTarget && <span className="text-accent">· you</span>}
+        {p.ticker} {p.isTarget && <span className="text-accent">· you are here</span>}
       </div>
       <div className="font-mono text-muted">
         {formatMetricDisplay(xKey, p.x)} vs {formatMetricDisplay(yKey, p.y)}
       </div>
     </div>
+  );
+}
+
+function TargetDot(props: { cx?: number; cy?: number }) {
+  const { cx, cy } = props;
+  if (cx == null || cy == null) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={14} fill="var(--accent)" opacity={0.15} />
+      <circle cx={cx} cy={cy} r={8} fill="var(--accent)" stroke="var(--card)" strokeWidth={2} />
+      <circle cx={cx} cy={cy} r={3} fill="var(--card)" />
+    </g>
   );
 }
 
@@ -50,6 +62,9 @@ export function ScatterChartView({ data }: { data: ScatterChartData }) {
 
   return (
     <div className="h-full w-full">
+      <div className="mb-1 text-center text-[0.6rem] text-muted">
+        Highlighted dot = this stock · peers in grey
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <RechartsScatter margin={{ top: 12, right: 12, bottom: 8, left: 8 }}>
           <CartesianGrid stroke="rgba(20,22,26,0.07)" strokeDasharray="3 3" />
@@ -89,12 +104,10 @@ export function ScatterChartView({ data }: { data: ScatterChartData }) {
           <ZAxis range={[40, 400]} />
           <Tooltip
             cursor={{ strokeDasharray: "4 4" }}
-            content={
-              <ScatterTooltip xKey={data.seriesX.key} yKey={data.seriesY.key} />
-            }
+            content={<ScatterTooltip xKey={data.seriesX.key} yKey={data.seriesY.key} />}
           />
           <Scatter name="Peers" data={peers} fill="var(--muted-2)" fillOpacity={0.7} />
-          <Scatter name="This stock" data={target} fill="var(--accent)" />
+          <Scatter name="This stock" data={target} fill="var(--accent)" shape={TargetDot} />
         </RechartsScatter>
       </ResponsiveContainer>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getWatchlist, toggleWatchlist } from "@/lib/watchlist";
+import { playUiClick } from "@/lib/settings";
 
 export function WatchlistButton({ ticker }: { ticker: string }) {
   const [on, setOn] = useState(false);
@@ -16,6 +17,7 @@ export function WatchlistButton({ ticker }: { ticker: string }) {
       onClick={() => {
         const next = toggleWatchlist(ticker);
         setOn(next.includes(ticker.toUpperCase()));
+        playUiClick();
       }}
       className={`surface-interactive rounded-full px-3 py-1.5 text-xs font-medium ${
         on ? "text-accent ring-1 ring-accent/25" : "text-muted"

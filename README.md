@@ -1,85 +1,104 @@
 # AMSAD — Aastik Mishra's Stock Analysis Dashboard
 
-A beginner-friendly stock analysis dashboard built with Next.js. Search any ticker to see price, fundamentals vs industry peers, an overall grade, and an options education section.
+A beginner-friendly stock analysis dashboard built with Next.js. Search any ticker to see price, fundamentals vs industry peers, an overall grade, charts, calculators, and an options education lab.
 
 **Educational only — not financial advice.**
 
 ## Features
 
+### Core
 - Live stock data from [Financial Modeling Prep](https://site.financialmodelingprep.com/) (profile, quote, ratios, peers, history)
-- Industry comparison on 7 key metrics (ROE, P/E, EV/EBITDA, and more)
+- Netflix-style home dashboard with auto-scrolling carousels
+- Industry comparison on 7 key metrics with accordion “tap to learn” cards
 - Learn / Pro modes with plain-English explainers
-- Collapsible **Options Lab**: full strike chain, greeks (Δ Γ Θ ν), IV vs historical vol, strategy analyzer, payoff diagrams
-- Export report card as PNG
-- Customizable accent color (saved in browser)
-- Interactive charts: time ranges (1W–MAX), sector-default benchmarks, custom compare pairs, scatter plots, volume overlay, chart PNG export
+- **Guided learning path** on each stock report (step-by-step tour)
+- Overall A–F grade with drill-down breakdown
+
+### Charts & compare
+- Interactive charts: time ranges (1W–MAX), sector benchmarks, custom compare, scatter plots, volume, PNG export
+- **`/compare`** — side-by-side grades, metric matchups, verdict, and chart overlay
+- Scatter chart highlights **“you are here”** vs peers
+
+### Options lab
+- Full strike chain, greeks, strategy explorer, what-if sliders, custom strategy builder
+- **Model vs live chain badge** (Black-Scholes when FMP chain unavailable)
+
+### Modeling
+- Position size, breakeven, covered call, DCA calculators
+- Monte Carlo scenario fan chart
+- Peer-implied fair value scenarios
+
+### Personalization
+- **Watchlist** with live quote refresh, sparklines, sort by % change
+- **Sector heatmap** on home
+- Dark / light mode, accent color, optional UI sounds
+- First-visit **onboarding** (accent, theme, star tickers)
+- Keyboard shortcuts: `/` search, `1–7` metrics, `h` help
+
+### Export & share
+- Full report PNG export
+- **Story PNG** one-pager snapshot
+- **Share link** (copies current URL with chart/options state)
+
+### Other
+- Earnings countdown strip (when FMP calendar available)
+- Metric trend badges (peer direction indicator)
+- Page transition animations
+- Open Graph metadata per ticker
 
 ## Local development
 
-1. Install dependencies:
-
 ```bash
 npm install
-```
-
-2. Copy the environment template and add your FMP API key:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local` and set `FMP_API_KEY`. Without a key, the API falls back to deterministic mock data.
-
-3. Start the dev server:
-
-```bash
+cp .env.example .env.local   # add FMP_API_KEY
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the home dashboard — Netflix-style carousels of stocks and ETFs. Click any tile (or search a ticker) to open the full report at `/stock/AAPL`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## API
+## API routes
 
-```
-GET /api/report/{TICKER}
-```
-
-Returns a `ReportCard` JSON object. Responses are cached in memory for 30 minutes and include CDN-friendly cache headers.
-
-Example:
-
-```bash
-curl http://localhost:3000/api/report/AAPL
-```
+| Route | Description |
+|-------|-------------|
+| `GET /api/report/{TICKER}` | Full report card JSON |
+| `GET /api/chart/{TICKER}` | Chart payload (compare / scatter) |
+| `GET /api/options/{TICKER}` | Options chain payload |
+| `GET /api/quotes` | Catalog quotes; `?symbols=AAPL,MSFT` for watchlist |
+| `GET /api/sparklines?symbols=` | Mini sparkline arrays |
+| `GET /api/earnings/{TICKER}` | Next earnings date |
 
 ## Deploy on Vercel
 
-1. Push this repo to GitHub.
-2. Import the project in [Vercel](https://vercel.com/new).
-3. Add the environment variable **`FMP_API_KEY`** in Project Settings → Environment Variables (Production, Preview, Development).
-4. Deploy.
+1. Push to GitHub
+2. Import in [Vercel](https://vercel.com/new)
+3. Set **`FMP_API_KEY`** in Environment Variables
+4. Deploy
 
-No extra config is required — Next.js 16 works out of the box on Vercel.
+## Demo recording
 
-## Export PNG
+To capture a GIF for your portfolio:
 
-Click **Export PNG** in the header to download the report card + options section as an image. The WebGL background is excluded from the capture.
+1. Run `npm run dev`
+2. Open home → click a tile → follow the guided tour → expand a metric → open Options Lab
+3. Use macOS Screenshot (Cmd+Shift+5) or [Kap](https://getkap.co/) to record a 15–30s clip
+4. Export as GIF or MP4 for README / social
+
+Suggested script: *“Browse carousels → open AAPL → grade + chart → tap ROE card → Options what-if slider.”*
 
 ## Project structure
 
 ```
-src/lib/fmp/           FMP HTTP client
-src/lib/aggregator/    FMP → ReportCard pipeline (metrics, peers, series)
-src/lib/cache/         In-memory report cache
-src/app/api/report/    Cached API route
-src/components/        UI
+src/app/                 Pages & API routes
+src/components/          UI (dashboard, charts, options, onboarding)
+src/lib/aggregator/      FMP → ReportCard pipeline
+src/lib/options/         Black-Scholes chain & strategies
+src/lib/settings.ts      Theme, sound, onboarding prefs
 ```
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Development server |
+| `npm run dev` | Dev server |
 | `npm run build` | Production build |
-| `npm run start` | Run production build locally |
-| `npm run lint` | ESLint |
+| `npm run start` | Start production server |

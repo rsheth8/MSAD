@@ -4,22 +4,12 @@ import { fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
 import type { FmpQuote } from "@/lib/fmp/types";
 
 const TTL_MS = 5 * 60 * 1000;
-let cache: { data: Record<string, { price: number; changePercentage: number }>; expires: number } | null =
-  null;
+let catalogCache: {
+  data: Record<string, { price: number; changePercentage: number }>;
+  expires: number;
+} | null = null;
 
-/** Batch live quotes for all catalog tickers (carousel tiles). */
-export async function GET() {
-  if (cache && Date.now() < cache.expires) {
-    return NextResponse.json(cache.data, {
-      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
-    });
-  }
-
-  if (!hasFmpApiKey()) {
-    return NextResponse.json({});
-  }
-
-  const symbols = allCatalogTickers();
+async function fetchQuotes(symbols: string[]) {
   const results = await Promise.allSettled(
     symbols.map(async (symbol) => {
       const rows = await fmpFetch<FmpQuote[]>("/quote", { symbol });
@@ -42,8 +32,34 @@ export async function GET() {
       };
     }
   }
+  return data;
+}
 
-  cache = { data, expires: Date.now() + TTL_MS };
+/** Batch live quotes — catalog by default, or ?symbols=AAPL,MSFT for watchlist. */
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const custom = url.searchParams.get("symbols");
+  const symbols = custom
+    ? custom
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean)
+        .slice(0, 20)
+    : allCatalogTickers();
+
+  if (!custom && catalogCache && Date.now() < catalogCache.expires) {
+    return NextResponse.json(catalogCache.data, {
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
+    });
+  }
+
+  if (!hasFmpApiKey()) {
+    return NextResponse.json({});
+  }
+
+  const data = await fetchQuotes(symbols);
+  if (!custom) catalogCache = { data, expires: Date.now() + TTL_MS };
+
   return NextResponse.json(data, {
     headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
   });

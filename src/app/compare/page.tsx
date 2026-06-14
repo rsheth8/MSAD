@@ -2,15 +2,30 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import type { ReportCard } from "@/lib/types";
+import { overallGrade } from "@/lib/analysis";
+import { compareMetrics, compareVerdict } from "@/lib/compare-analysis";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
+import type { CompareChartData } from "@/lib/chart/types";
+import { CompareChart } from "@/components/CompareChart";
 import { GlassCard } from "@/components/GlassCard";
+import { AmbientOrbs } from "@/components/AmbientOrbs";
 
-export default function ComparePage() {
+const SceneBackground = dynamic(() => import("@/components/SceneBackground"), { ssr: false });
+
+const SENTIMENT_COLOR = {
+  good: "var(--up)",
+  neutral: "var(--neutral)",
+  bad: "var(--down)",
+} as const;
+
+export default function CompareView() {
   const [a, setA] = useState("AAPL");
   const [b, setB] = useState("MSFT");
   const [cardA, setCardA] = useState<ReportCard | null>(null);
   const [cardB, setCardB] = useState<ReportCard | null>(null);
+  const [chart, setChart] = useState<CompareChartData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,10 +41,13 @@ export default function ComparePage() {
     Promise.all([
       fetch(`/api/report/${a}`).then((r) => r.json()),
       fetch(`/api/report/${b}`).then((r) => r.json()),
+      fetch(`/api/chart/${a}?range=1Y&mode=compare&default=0&a=stock&b=${b}`).then((r) => r.json()),
     ])
-      .then(([ra, rb]) => {
+      .then(([ra, rb, chartPayload]) => {
         setCardA(ra);
         setCardB(rb);
+        if (chartPayload?.chart?.mode === "compare") setChart(chartPayload.chart);
+        else setChart(null);
       })
       .finally(() => setLoading(false));
   }, [a, b]);
@@ -41,50 +59,133 @@ export default function ComparePage() {
     window.history.replaceState({}, "", url.toString());
   }
 
+  const verdict = cardA && cardB ? compareVerdict(cardA, cardB) : null;
+  const metrics = cardA && cardB ? compareMetrics(cardA, cardB) : [];
+  const gradeA = cardA ? overallGrade(cardA) : null;
+  const gradeB = cardB ? overallGrade(cardB) : null;
+
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <Link href="/" className="text-xs text-muted hover:text-foreground">
-        ← Dashboard
-      </Link>
-      <h1 className="mt-2 font-display text-2xl font-bold">Compare tickers</h1>
-      <p className="mt-1 text-xs text-muted">Side-by-side snapshot — click through for full reports.</p>
+    <>
+      <SceneBackground accent="#16a34a" />
+      <AmbientOrbs />
+      <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+        <Link href="/" className="text-xs text-muted hover:text-foreground">
+          ← Dashboard
+        </Link>
+        <h1 className="mt-2 font-display text-2xl font-bold sm:text-3xl">Compare tickers</h1>
+        <p className="mt-1 text-xs text-muted sm:text-sm">
+          Side-by-side grades, metric matchups, and performance overlay.
+        </p>
 
-      <div className="mt-4 flex flex-wrap items-end gap-2">
-        <input value={a} onChange={(e) => setA(e.target.value.toUpperCase())} className="surface w-24 rounded-lg px-3 py-2 font-mono text-sm" />
-        <span className="text-muted">vs</span>
-        <input value={b} onChange={(e) => setB(e.target.value.toUpperCase())} className="surface w-24 rounded-lg px-3 py-2 font-mono text-sm" />
-        <button type="button" onClick={runCompare} className="btn-primary">
-          Compare
-        </button>
-      </div>
-
-      {loading && <div className="mt-8 animate-pulse text-sm text-muted">Loading…</div>}
-
-      {!loading && cardA && cardB && (
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {[cardA, cardB].map((card) => (
-            <GlassCard key={card.ticker} className="p-5">
-              <Link href={`/stock/${card.ticker}`} className="font-display text-lg font-bold hover:text-accent">
-                {card.name}
-              </Link>
-              <div className="font-mono text-xs text-muted">{card.ticker} · {card.industry}</div>
-              <div className="mt-4 font-mono text-2xl font-semibold">{formatCurrency(card.price)}</div>
-              <div className="mt-2 flex gap-3 text-xs">
-                <span>1Y {formatSignedPercent(card.changes.year)}</span>
-                <span>β {card.beta}</span>
-              </div>
-              <ul className="mt-4 space-y-1 text-xs">
-                {card.metrics.slice(0, 4).map((m) => (
-                  <li key={m.key} className="flex justify-between gap-2">
-                    <span className="text-muted">{m.label}</span>
-                    <span className="font-mono">{m.display}</span>
-                  </li>
-                ))}
-              </ul>
-            </GlassCard>
-          ))}
+        <div className="mt-4 flex flex-wrap items-end gap-2">
+          <input
+            value={a}
+            onChange={(e) => setA(e.target.value.toUpperCase())}
+            className="surface w-24 rounded-lg px-3 py-2 font-mono text-sm"
+            aria-label="Ticker A"
+          />
+          <span className="text-muted">vs</span>
+          <input
+            value={b}
+            onChange={(e) => setB(e.target.value.toUpperCase())}
+            className="surface w-24 rounded-lg px-3 py-2 font-mono text-sm"
+            aria-label="Ticker B"
+          />
+          <button type="button" onClick={runCompare} className="btn-primary">
+            Compare
+          </button>
         </div>
-      )}
-    </main>
+
+        {loading && <div className="mt-8 animate-pulse text-sm text-muted">Loading comparison…</div>}
+
+        {!loading && verdict && cardA && cardB && gradeA && gradeB && (
+          <div className="mt-8 space-y-6">
+            <GlassCard className="p-5 sm:p-6">
+              <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-accent">Verdict</div>
+              <h2 className="mt-1 font-display text-xl font-bold">{verdict.headline}</h2>
+              <p className="mt-2 text-sm text-muted">{verdict.detail}</p>
+            </GlassCard>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[cardA, cardB].map((card, i) => {
+                const g = i === 0 ? gradeA : gradeB;
+                return (
+                  <GlassCard key={card.ticker} className="surface-interactive p-5">
+                    <Link href={`/stock/${card.ticker}`} className="font-display text-lg font-bold hover:text-accent">
+                      {card.name}
+                    </Link>
+                    <div className="font-mono text-xs text-muted">{card.ticker} · {card.industry}</div>
+                    <div className="mt-4 flex items-center gap-4">
+                      <div
+                        className="flex h-14 w-14 items-center justify-center rounded-xl border-2 font-display text-2xl font-bold"
+                        style={{
+                          color: SENTIMENT_COLOR[g.sentiment],
+                          borderColor: SENTIMENT_COLOR[g.sentiment],
+                        }}
+                      >
+                        {g.letter}
+                      </div>
+                      <div>
+                        <div className="font-mono text-2xl font-semibold">{formatCurrency(card.price)}</div>
+                        <div className="mt-1 flex gap-3 text-xs">
+                          <span>1Y {formatSignedPercent(card.changes.year)}</span>
+                          <span>β {card.beta.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-muted">{g.summary}</p>
+                  </GlassCard>
+                );
+              })}
+            </div>
+
+            {chart && (
+              <GlassCard className="p-4 sm:p-5">
+                <div className="mb-2 text-sm font-semibold">
+                  {chart.seriesA.label} vs {chart.seriesB.label} · 1Y
+                </div>
+                <div className="h-56 sm:h-64">
+                  <CompareChart data={chart} showVolume={false} />
+                </div>
+              </GlassCard>
+            )}
+
+            <GlassCard className="overflow-x-auto p-4 sm:p-5">
+              <div className="mb-3 text-sm font-semibold">Metric matchups</div>
+              <table className="w-full min-w-[480px] text-xs">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted">
+                    <th className="pb-2 pr-4">Metric</th>
+                    <th className="pb-2 pr-4 font-mono">{a}</th>
+                    <th className="pb-2 pr-4 font-mono">{b}</th>
+                    <th className="pb-2">Edge</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.map((m) => (
+                    <tr key={m.key} className="border-b border-border/60">
+                      <td className="py-2 pr-4 text-muted">{m.label}</td>
+                      <td
+                        className={`py-2 pr-4 font-mono ${m.winner === "a" ? "font-semibold text-up" : ""}`}
+                      >
+                        {m.aDisplay}
+                      </td>
+                      <td
+                        className={`py-2 pr-4 font-mono ${m.winner === "b" ? "font-semibold text-up" : ""}`}
+                      >
+                        {m.bDisplay}
+                      </td>
+                      <td className="py-2 font-mono text-muted">
+                        {m.winner === "tie" ? "—" : m.winner === "a" ? a : b}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </GlassCard>
+          </div>
+        )}
+      </main>
+    </>
   );
 }
