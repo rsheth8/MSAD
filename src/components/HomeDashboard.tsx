@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -95,6 +96,9 @@ export function HomeDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Link href="/discover" className="btn-primary text-xs">
+              Discover stocks
+            </Link>
             <ThemeToggle />
             <SoundToggle />
             <AccentPicker value={accent} onChange={setAccent} />
@@ -104,10 +108,11 @@ export function HomeDashboard() {
 
         <div className="hero-hint surface mx-auto mb-10 hidden max-w-xl rounded-2xl px-6 py-4 text-center lg:block">
           <p className="text-sm leading-relaxed text-muted">
-            Pick a tile below to open a full report — grades, charts, calculators, and an options
-            lab. Press <kbd className="rounded bg-background px-1 font-mono text-[0.65rem]">/</kbd> to
-            search, <kbd className="rounded bg-background px-1 font-mono text-[0.65rem]">1–7</kbd> for
-            metrics on a report page.
+            Pick a tile below to open a full report — or use{" "}
+            <Link href="/discover" className="font-medium text-accent hover:underline">
+              Discover
+            </Link>{" "}
+            to filter by market cap, P/E, and more.
           </p>
         </div>
 

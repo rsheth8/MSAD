@@ -35,6 +35,15 @@ A beginner-friendly stock analysis dashboard built with Next.js. Search any tick
 - First-visit **onboarding** (accent, theme, star tickers)
 - Keyboard shortcuts: `/` search, `1–7` metrics, `h` help
 
+### Discover (`/discover`)
+- Stock screener with **beginner presets** and **Pro filters** (cap, P/E, ROE, sector, industry)
+- **Filter explainers** on every Pro field (Learn mode tooltips)
+- **Save & load screens** in localStorage
+- **Exclude tickers** (hide mega-caps you already know)
+- **“New to AMSAD”** badge for names not in the home catalog
+- **Add all to watchlist** from results
+- **Reverse screens** — find stocks pricier or weaker ROE vs industry peers
+
 ### Export & share
 - Full report PNG export
 - **Story PNG** one-pager snapshot
@@ -66,6 +75,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `GET /api/quotes` | Catalog quotes; `?symbols=AAPL,MSFT` for watchlist |
 | `GET /api/sparklines?symbols=` | Mini sparkline arrays |
 | `GET /api/earnings/{TICKER}` | Next earnings date |
+| `POST /api/screener` | Stock discovery / screener (FMP + peer enrichment) |
 
 ## Deploy on Vercel
 
@@ -91,6 +101,7 @@ Suggested script: *“Browse carousels → open AAPL → grade + chart → tap R
 src/app/                 Pages & API routes
 src/components/          UI (dashboard, charts, options, onboarding)
 src/lib/aggregator/      FMP → ReportCard pipeline
+src/lib/screener/          Discovery filters, presets, saved screens
 src/lib/options/         Black-Scholes chain & strategies
 src/lib/settings.ts      Theme, sound, onboarding prefs
 ```
