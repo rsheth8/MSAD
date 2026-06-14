@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AMSAD — Aastik Mishra's Stock Analysis Dashboard
 
-## Getting Started
+A beginner-friendly stock analysis dashboard built with Next.js. Search any ticker to see price, fundamentals vs industry peers, an overall grade, and an options education section.
 
-First, run the development server:
+**Educational only — not financial advice.**
+
+## Features
+
+- Live stock data from [Financial Modeling Prep](https://site.financialmodelingprep.com/) (profile, quote, ratios, peers, history)
+- Industry comparison on 7 key metrics (ROE, P/E, EV/EBITDA, and more)
+- Learn / Pro modes with plain-English explainers
+- Collapsible options education (calls, puts, IV, payoff chart)
+- Export report card as PNG
+- Customizable accent color (saved in browser)
+
+## Local development
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the environment template and add your FMP API key:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and set `FMP_API_KEY`. Without a key, the API falls back to deterministic mock data.
+
+3. Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) for the home dashboard — Netflix-style carousels of stocks and ETFs. Click any tile (or search a ticker) to open the full report at `/stock/AAPL`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+GET /api/report/{TICKER}
+```
 
-## Learn More
+Returns a `ReportCard` JSON object. Responses are cached in memory for 30 minutes and include CDN-friendly cache headers.
 
-To learn more about Next.js, take a look at the following resources:
+Example:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+curl http://localhost:3000/api/report/AAPL
+```
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push this repo to GitHub.
+2. Import the project in [Vercel](https://vercel.com/new).
+3. Add the environment variable **`FMP_API_KEY`** in Project Settings → Environment Variables (Production, Preview, Development).
+4. Deploy.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+No extra config is required — Next.js 16 works out of the box on Vercel.
+
+## Export PNG
+
+Click **Export PNG** in the header to download the report card + options section as an image. The WebGL background is excluded from the capture.
+
+## Project structure
+
+```
+src/lib/fmp/           FMP HTTP client
+src/lib/aggregator/    FMP → ReportCard pipeline (metrics, peers, series)
+src/lib/cache/         In-memory report cache
+src/app/api/report/    Cached API route
+src/components/        UI
+```
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Run production build locally |
+| `npm run lint` | ESLint |

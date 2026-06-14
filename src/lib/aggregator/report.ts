@@ -1,0 +1,64 @@
+import { FmpError, fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
+import type { FmpPriceBar, FmpProfile, FmpQuote } from "@/lib/fmp/types";
+import { getMockReportCard } from "@/lib/mock";
+import type { ReportCard } from "@/lib/types";
+import { buildOptionsData } from "./options";
+import { buildMetrics, extractRawMetrics } from "./metrics";
+import { fetchFundamentals, fetchPeerAverages } from "./peers";
+import { buildSeriesAndChanges, historyFromDate } from "./series";
+
+function normalizeTicker(raw: string): string {
+  return (raw || "").toUpperCase().trim().replace(/^\$/, "");
+}
+
+/** Aggregate FMP data into the shared ReportCard contract. Falls back to mock when no API key. */
+export async function getReportCard(rawTicker: string): Promise<ReportCard> {
+  const ticker = normalizeTicker(rawTicker);
+  if (!ticker) throw new FmpError("Ticker is required", "NOT_FOUND");
+
+  if (!hasFmpApiKey()) {
+    return getMockReportCard(ticker);
+  }
+
+  const from = historyFromDate();
+
+  const [profileRes, quoteRes, fundamentals, peerAvgs, stockHist, benchHist] = await Promise.all([
+    fmpFetch<FmpProfile[]>("/profile", { symbol: ticker }),
+    fmpFetch<FmpQuote[]>("/quote", { symbol: ticker }),
+    fetchFundamentals(ticker),
+    fetchPeerAverages(ticker),
+    fmpFetch<FmpPriceBar[]>("/historical-price-eod/full", { symbol: ticker, from }),
+    fmpFetch<FmpPriceBar[]>("/historical-price-eod/full", { symbol: "SPY", from }),
+  ]);
+
+  const profile = profileRes[0];
+  const quote = quoteRes[0];
+  if (!profile?.companyName) {
+    throw new FmpError(`No profile found for ${ticker}`, "NOT_FOUND");
+  }
+
+  const price = quote?.price ?? profile.price;
+  const beta = profile.beta ?? 1;
+  const raw = extractRawMetrics(fundamentals);
+  const metrics = buildMetrics(raw, peerAvgs);
+  const { series, changes } = buildSeriesAndChanges(stockHist ?? [], benchHist ?? [], price);
+
+  // FMP options-chain is often empty on lower tiers — derive educational contracts from live price/beta.
+  const options = buildOptionsData(price, beta);
+
+  return {
+    name: profile.companyName,
+    ticker: profile.symbol ?? ticker,
+    industry: profile.industry ?? "—",
+    exchange: profile.exchange ?? "—",
+    currency: profile.currency ?? "USD",
+    price,
+    beta,
+    changes,
+    series,
+    metrics,
+    options,
+    asOf: new Date().toISOString(),
+    isMock: false,
+  };
+}

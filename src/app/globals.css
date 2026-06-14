@@ -1,26 +1,147 @@
 @import "tailwindcss";
 
+/* ----------------------------------------------------------------------------
+   AMSAD — minimalist professional light theme.
+   Neutral palette (white / grey / black) + a single user-customizable accent.
+   The accent is overridden at runtime on <html> via JS (default: green).
+---------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* neutrals */
+  --background: #f4f5f7;
+  --card: #ffffff;
+  --foreground: #14161a;
+  --muted: #6b7280;
+  --muted-2: #9aa1ad;
+  --border: #e6e8ec;
+
+  /* user-customizable accent (set on <html> at runtime) */
+  --accent: #16a34a;
+
+  /* functional sentiment — fixed stoplight convention, independent of accent */
+  --up: #15803d;
+  --neutral: #d97706;
+  --down: #dc2626;
+
+  /* soft, professional shadow carrying a faint accent tint */
+  --shadow-card:
+    0 1px 2px rgba(17, 19, 23, 0.05),
+    0 14px 32px -20px color-mix(in srgb, var(--accent) 50%, rgba(17, 19, 23, 0.30));
+  --shadow-card-hover:
+    0 1px 2px rgba(17, 19, 23, 0.06),
+    0 20px 44px -22px color-mix(in srgb, var(--accent) 60%, rgba(17, 19, 23, 0.35));
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-card: var(--card);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-up: var(--up);
+  --color-neutral: var(--neutral);
+  --color-down: var(--down);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* White card surface with a soft accent-tinted shadow */
+.surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+/* Subtle technical dot grid, faded toward the edges */
+.texture-grid {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
+    transparent 1.6px
+  );
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
+}
+
+/* Refined accent focus ring on any interactive element */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* Animated sheen sweep for primary accent controls */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.sheen:hover::after {
+  transform: translateX(130%);
+}
+
+/* Netflix-style auto-scrolling carousel rows */
+.carousel-viewport {
+  overflow: hidden;
+}
+
+.carousel-track {
+  width: max-content;
+  animation: carousel-scroll var(--carousel-duration, 90s) linear infinite;
+  will-change: transform;
+}
+
+.carousel-row:hover .carousel-track {
+  animation-play-state: paused;
+}
+
+@keyframes carousel-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
+/* thin neutral scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
