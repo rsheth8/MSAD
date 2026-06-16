@@ -11,6 +11,7 @@ import { NeutralBackdrop } from "./NeutralBackdrop";
 import { SectorHeatmap } from "./SectorHeatmap";
 import { MarketPulse } from "./MarketPulse";
 import { SoundToggle, ThemeToggle } from "./OnboardingModal";
+import { AccountButton } from "./auth/AccountButton";
 import { WatchlistRow } from "./WatchlistRow";
 import { TickerSearch } from "./TickerSearch";
 import type { TileQuote } from "./StockTile";
@@ -131,9 +132,16 @@ export function HomeDashboard() {
               <Link href="/news" className="btn-ghost interactive text-xs">
                 Market news
               </Link>
+              <Link href="/practice" className="btn-ghost interactive text-xs">
+                Hypothesis Lab
+              </Link>
+              <Link href="/dashboard" className="btn-ghost interactive text-xs">
+                My dashboard
+              </Link>
               <ThemeToggle />
               <SoundToggle />
               <AccentPicker value={accent} onChange={setAccent} />
+              <AccountButton />
             </div>
           </div>
 

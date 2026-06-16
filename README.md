@@ -6,6 +6,28 @@ A beginner-friendly stock analysis dashboard by **Aastik Mishra** and **Rahil Sh
 
 ## Features
 
+### Learn, test, decide — the part no other market app has
+MSAD is a **trading gym**, not a tip service. The goal is to make you a
+*measurably* better investor, then let you carry that earned conviction to the
+real market.
+- **The Lens** — a grounded AI tutor on every stock. One **depth slider**
+  (Learn → Analyst → Quant) re-explains the same real numbers at your level.
+  Ask anything, or hit **"Make the bear case"** to fight your own bias. Never
+  gives buy/sell advice; answers are anchored to the stock's actual data so it
+  can't make figures up.
+- **The Conviction Journal** — write a thesis (and *what would change your mind*)
+  **before** you act. The AI coach critiques your *reasoning*, not the outcome.
+- **Calibration score** — log probability predictions; we resurface each on its
+  due date so you score yourself. Your readiness score is the honest "am I
+  getting better?" signal that bridges practice to real money.
+- **Hypothesis Lab** (`/practice`) — backtest a rule (buy & hold, or a moving-
+  average trend filter) against real EOD history vs buy-and-hold and the S&P
+  500. Every result ships with the honest caveats — survivorship bias,
+  overfitting, costs, no look-ahead — so a backtest can't fool you.
+- **Your dashboard** (`/dashboard`) — journal, predictions, calibration, and
+  watchlist in one place. Saved locally as a guest; synced to your **Google
+  account** across devices when signed in.
+
 ### Home & discovery
 - Netflix-style catalog with live quotes, sparklines, and sector heatmap
 - **Market news** feed and **Market Pulse** ticker strip
@@ -60,13 +82,26 @@ Open [http://localhost:3000](http://localhost:3000).
 | `GET /api/earnings/{TICKER}` | Next earnings date |
 | `POST /api/screener` | Stock discovery / screener |
 | `POST /api/explore` | Explore universe filters |
+| `POST /api/explain` | The Lens — grounded AI explanation at a depth |
+| `POST /api/backtest` | Hypothesis Lab — backtest a rule vs buy-hold & SPY |
+| `GET/PUT /api/profile` | Signed-in user's cloud progress |
+| `GET /api/auth/session` | Current user + whether auth is enabled |
+| `GET /api/auth/google` | Start Google sign-in (when configured) |
 
 ## Deploy on Vercel
 
 1. Push to GitHub
 2. Import in [Vercel](https://vercel.com/new)
-3. Set **`FMP_API_KEY`** in Environment Variables
+3. Set environment variables (see `.env.example`):
+   - **`FMP_API_KEY`** — market data (required for live data)
+   - **`ANTHROPIC_API_KEY`** — the AI Lens (optional; static fallback without it)
+   - **`MASSIVE_API_KEY`** — news + sentiment (optional)
+   - **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `AUTH_SECRET`** — accounts (optional)
+   - **`KV_REST_API_URL` / `KV_REST_API_TOKEN`** — durable cross-device sync (optional)
 4. Deploy
+
+> Every integration degrades gracefully: with no keys at all the app still runs
+> on sample data, curated explainers, and local (guest) progress.
 
 ## Project structure
 

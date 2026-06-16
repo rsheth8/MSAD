@@ -24,6 +24,12 @@ import { NewsStrip } from "@/components/NewsStrip";
 import { LearningPathBar, scrollToSection } from "@/components/LearningPathBar";
 import { ShareButton, StoryExportButton } from "@/components/ShareExport";
 import { SoundToggle, ThemeToggle } from "@/components/OnboardingModal";
+import { DepthSlider } from "@/components/ai/DepthSlider";
+import { AskPanel } from "@/components/ai/AskPanel";
+import { JournalPanel } from "@/components/journal/JournalPanel";
+import { AccountButton } from "@/components/auth/AccountButton";
+import { useDepth } from "@/components/ai/DepthProvider";
+import { learnModeFromDepth } from "@/lib/ai/depth";
 import { BRAND, MSAD_DOM, MSAD_STORAGE } from "@/lib/brand";
 
 const ContourScene = dynamic(() => import("@/components/ContourScene"), {
@@ -37,7 +43,8 @@ export default function StockReportPage() {
   const router = useRouter();
   const ticker = (params.ticker ?? "AAPL").toUpperCase();
 
-  const [learnMode, setLearnMode] = useState(true);
+  const { depth } = useDepth();
+  const learnMode = learnModeFromDepth(depth);
   const [accent, setAccent] = useState<string>(BRAND.accent);
   const [data, setData] = useState<ReportCard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,32 +144,15 @@ export default function StockReportPage() {
           <SoundToggle />
           <AccentPicker value={accent} onChange={setAccent} />
 
-          <div
-            className="surface flex items-center rounded-full p-0.5 text-xs font-medium"
-            role="group"
-            aria-label="Detail level"
-          >
-            <button
-              type="button"
-              onClick={() => setLearnMode(true)}
-              aria-pressed={learnMode}
-              className={`btn-pill rounded-full px-3 py-1 ${
-                learnMode ? "btn-pill-active" : "btn-pill-inactive"
-              }`}
-            >
-              Learn
-            </button>
-            <button
-              type="button"
-              onClick={() => setLearnMode(false)}
-              aria-pressed={!learnMode}
-              className={`btn-pill rounded-full px-3 py-1 ${
-                !learnMode ? "bg-foreground/90 text-white shadow-md" : "btn-pill-inactive"
-              }`}
-            >
-              Pro
-            </button>
-          </div>
+          <DepthSlider />
+
+          <Link href={`/practice?ticker=${ticker}`} className="btn-ghost interactive">
+            Test a hypothesis
+          </Link>
+          <Link href="/dashboard" className="btn-ghost interactive">
+            My dashboard
+          </Link>
+          <AccountButton />
 
           {data && <ShareButton />}
           {data && <StoryExportButton data={data} />}
@@ -198,15 +188,23 @@ export default function StockReportPage() {
       )}
 
       {data && !loading && (
-        <div id={EXPORT_ROOT_ID} className="space-y-8">
-          <ReportCardView data={data} learnMode={learnMode} />
-          <div id="section-modeling">
-            <ModelingHub data={data} />
+        <>
+          <div id={EXPORT_ROOT_ID} className="space-y-8">
+            <ReportCardView data={data} learnMode={learnMode} />
+            <div id="section-modeling">
+              <ModelingHub data={data} />
+            </div>
+            <div id="section-options">
+              <OptionsSection data={data} learnMode={learnMode} />
+            </div>
           </div>
-          <div id="section-options">
-            <OptionsSection data={data} learnMode={learnMode} />
+
+          {/* The Lens + the Journal — kept out of the PNG export root */}
+          <div id="section-lens" className="mt-8 space-y-6">
+            <AskPanel ticker={ticker} />
+            <JournalPanel ticker={ticker} price={data.price} />
           </div>
-        </div>
+        </>
       )}
       </main>
     </>
