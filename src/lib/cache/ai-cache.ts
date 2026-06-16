@@ -1,29 +1,29 @@
 import type { ExplainResponse } from "@/lib/ai/types";
+import { cacheGet, cacheSet } from "@/lib/cache/shared-cache";
 
-/**
- * In-memory cache for deterministic Lens explanations (metric/overview/price/
- * bear/bull). User-specific kinds (free questions, journal critiques) are never
- * cached. Keeps repeat pageviews of the same stock free.
- */
 const TTL_MS = 30 * 60 * 1000;
 
-interface Entry {
+interface MemEntry {
   data: ExplainResponse;
   expiresAt: number;
 }
 
-const store = new Map<string, Entry>();
+const memory = new Map<string, MemEntry>();
 
-export function getCachedExplain(key: string): ExplainResponse | null {
-  const entry = store.get(key);
+export async function getCachedExplain(key: string): Promise<ExplainResponse | null> {
+  const shared = await cacheGet<ExplainResponse>(key);
+  if (shared) return shared;
+
+  const entry = memory.get(key);
   if (!entry) return null;
   if (Date.now() > entry.expiresAt) {
-    store.delete(key);
+    memory.delete(key);
     return null;
   }
   return entry.data;
 }
 
-export function setCachedExplain(key: string, data: ExplainResponse): void {
-  store.set(key, { data, expiresAt: Date.now() + TTL_MS });
+export async function setCachedExplain(key: string, data: ExplainResponse): Promise<void> {
+  await cacheSet(key, data);
+  memory.set(key, { data, expiresAt: Date.now() + TTL_MS });
 }

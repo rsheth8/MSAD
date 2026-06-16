@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { hasFmpApiKey, FmpError } from "@/lib/fmp/client";
 import { fetchHistoricalBars } from "@/lib/fmp/historical";
 import { syntheticBars } from "@/lib/backtest/mock";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureError } from "@/lib/observability";
 import { CATALOG_ROWS } from "@/lib/catalog";
 import type { Bar } from "@/lib/backtest/types";
 import type { ReplayGame } from "@/lib/replay/types";
@@ -22,7 +24,10 @@ function sortAsc(bars: Bar[]): Bar[] {
   return [...bars].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const limited = await checkRateLimit(req, RATE_LIMITS.replay);
+  if (limited) return limited;
+
   const choice = pickStock();
   try {
     const isMock = !hasFmpApiKey();
@@ -62,7 +67,7 @@ export async function GET() {
       const status = err.code === "CONFIG" ? 503 : 502;
       return NextResponse.json({ error: err.message }, { status });
     }
-    console.error("[api/replay]", err);
+    void captureError(err, { route: "api/replay" });
     return NextResponse.json({ error: "Failed to start a replay" }, { status: 500 });
   }
 }

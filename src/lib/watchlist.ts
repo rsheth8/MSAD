@@ -1,4 +1,5 @@
 import { MSAD_EVENTS, MSAD_STORAGE } from "@/lib/brand";
+import { syncPrefsToCloud } from "@/lib/profile/store";
 
 const WATCHLIST_KEY = MSAD_STORAGE.watchlist;
 
@@ -18,6 +19,7 @@ export function toggleWatchlist(ticker: string): string[] {
   const next = list.includes(t) ? list.filter((x) => x !== t) : [...list, t];
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
   window.dispatchEvent(new Event(MSAD_EVENTS.watchlist));
+  syncPrefsToCloud();
   return next;
 }
 
@@ -29,5 +31,6 @@ export function setWatchlist(tickers: string[]) {
   const next = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
   window.dispatchEvent(new Event(MSAD_EVENTS.watchlist));
+  syncPrefsToCloud();
   return next;
 }

@@ -3,7 +3,7 @@
 /**
  * Local-first profile store. Everything works offline as a guest (localStorage);
  * when the user signs in, changes also sync to their account so they can keep
- * building their dashboard across devices. Last-write-wins by `updatedAt`.
+ * building their dashboard across devices. Per-item merge on pull.
  */
 import { MSAD_EVENTS, MSAD_STORAGE } from "@/lib/brand";
 import {
@@ -16,12 +16,26 @@ import {
   type PredictionKind,
   type UserProfile,
 } from "./types";
+import { mergeProfiles } from "./merge";
+import { applyPrefsToLocal, collectLocalPrefs, enrichProfileWithLocal } from "./prefs";
 
 let current: UserProfile | null = null;
-let cloudEnabled = false; // flipped on once we confirm an authenticated session
+let cloudEnabled = false;
+let durableStore = false;
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
+}
+
+function migrateProfile(parsed: UserProfile): UserProfile {
+  if (parsed.version >= PROFILE_VERSION) return parsed;
+  return {
+    ...parsed,
+    version: PROFILE_VERSION,
+    watchlist: parsed.watchlist ?? [],
+    savedScreens: parsed.savedScreens ?? [],
+    preferences: parsed.preferences ?? {},
+  };
 }
 
 function loadLocal(): UserProfile {
@@ -29,10 +43,8 @@ function loadLocal(): UserProfile {
   try {
     const raw = localStorage.getItem(MSAD_STORAGE.profile);
     if (!raw) return emptyProfile();
-    const parsed = JSON.parse(raw) as UserProfile;
-    if (!parsed || parsed.version !== PROFILE_VERSION || !Array.isArray(parsed.journal)) {
-      return emptyProfile();
-    }
+    const parsed = migrateProfile(JSON.parse(raw) as UserProfile);
+    if (!parsed || !Array.isArray(parsed.journal)) return emptyProfile();
     return parsed;
   } catch {
     return emptyProfile();
@@ -51,6 +63,14 @@ function saveLocal(p: UserProfile) {
 export function getProfile(): UserProfile {
   if (!current) current = loadLocal();
   return current;
+}
+
+export function isCloudEnabled(): boolean {
+  return cloudEnabled;
+}
+
+export function isDurableStore(): boolean {
+  return durableStore;
 }
 
 function notify() {
@@ -109,7 +129,7 @@ export function setJournalCritique(id: string, aiCritique: string) {
   const p = getProfile();
   commit(
     { ...p, journal: p.journal.map((e) => (e.id === id ? { ...e, aiCritique } : e)) },
-    { push: false }, // critique is derivable; no need to round-trip to cloud
+    { push: false },
   );
 }
 
@@ -157,27 +177,34 @@ export function deletePrediction(id: string) {
   commit({ ...p, predictions: p.predictions.filter((pr) => pr.id !== id) });
 }
 
+/** Push watchlist/settings changes to cloud after localStorage modules update. */
+export function syncPrefsToCloud(): void {
+  if (!cloudEnabled) return;
+  const p = enrichProfileWithLocal(getProfile());
+  void pushCloud(p);
+}
+
 // ---- cloud sync -----------------------------------------------------------
 
 async function pushCloud(p: UserProfile) {
   try {
-    await fetch("/api/profile", {
+    const enriched = enrichProfileWithLocal(p);
+    const res = await fetch("/api/profile", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(p),
+      body: JSON.stringify(enriched),
     });
+    if (!res.ok) {
+      console.warn("[profile] cloud push failed:", res.status);
+    }
   } catch {
     /* offline — local copy is the source of truth until next sync */
   }
 }
 
-function mergeNewer(a: UserProfile, b: UserProfile): UserProfile {
-  return new Date(a.updatedAt).getTime() >= new Date(b.updatedAt).getTime() ? a : b;
-}
-
 /**
  * Called once on app load. Detects an authenticated session, pulls the cloud
- * profile, merges last-write-wins with local, and enables push-on-change.
+ * profile, merges per-item with local, and enables push-on-change.
  */
 export async function syncWithAccount(): Promise<boolean> {
   if (!isBrowser()) return false;
@@ -185,20 +212,27 @@ export async function syncWithAccount(): Promise<boolean> {
     const res = await fetch("/api/profile", { method: "GET" });
     if (res.status === 401) {
       cloudEnabled = false;
+      durableStore = false;
       return false;
     }
     if (!res.ok) return false;
+    const data = (await res.json()) as {
+      profile: UserProfile | null;
+      durableStore?: boolean;
+    };
     cloudEnabled = true;
-    const remote = (await res.json()) as { profile: UserProfile | null };
-    const local = getProfile();
-    if (remote.profile) {
-      const merged = mergeNewer(local, remote.profile);
+    durableStore = data.durableStore ?? false;
+    const local = enrichProfileWithLocal(getProfile());
+    if (data.profile) {
+      const remote = migrateProfile(data.profile);
+      const merged = mergeProfiles(local, remote);
       current = merged;
       saveLocal(merged);
+      applyPrefsToLocal(merged);
       notify();
-      if (merged === local) void pushCloud(merged); // local was newer → upload
+      void pushCloud(merged);
     } else {
-      void pushCloud(local); // first sign-in: seed the account with local progress
+      void pushCloud(local);
     }
     return true;
   } catch {

@@ -3,6 +3,10 @@ import { hasFmpApiKey, FmpError } from "@/lib/fmp/client";
 import { fetchHistoricalBars } from "@/lib/fmp/historical";
 import { computeBacktest, isStrategyKind } from "@/lib/backtest/engine";
 import { syntheticBars } from "@/lib/backtest/mock";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkQuota, QUOTAS } from "@/lib/usage/quotas";
+import { getSession } from "@/lib/auth/session";
+import { captureError } from "@/lib/observability";
 import type { Bar, BacktestResult, StrategyKind } from "@/lib/backtest/types";
 
 const TICKER_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
@@ -20,6 +24,13 @@ function fromDate(years: number): string {
 }
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, RATE_LIMITS.backtest);
+  if (limited) return limited;
+
+  const user = await getSession(req);
+  const quotaHit = await checkQuota(user, QUOTAS.backtest);
+  if (quotaHit) return quotaHit;
+
   let body: {
     ticker?: string;
     kind?: StrategyKind;
@@ -81,7 +92,7 @@ export async function POST(req: Request) {
       const status = err.code === "NOT_FOUND" ? 404 : err.code === "CONFIG" ? 503 : 502;
       return NextResponse.json({ error: err.message }, { status });
     }
-    console.error("[api/backtest]", err);
+    void captureError(err, { route: "api/backtest" });
     return NextResponse.json({ error: "Failed to run backtest" }, { status: 500 });
   }
 }

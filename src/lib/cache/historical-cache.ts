@@ -1,28 +1,33 @@
 import type { FmpPriceBar } from "@/lib/fmp/types";
+import { cacheGet, cacheSet } from "@/lib/cache/shared-cache";
 
 const TTL_MS = 30 * 60 * 1000;
 
-interface CacheEntry {
+interface MemEntry {
   data: FmpPriceBar[];
   expiresAt: number;
 }
 
-const store = new Map<string, CacheEntry>();
+const memory = new Map<string, MemEntry>();
 
 export function historicalCacheKey(symbol: string, from: string): string {
-  return `${symbol.toUpperCase()}|${from}`;
+  return `hist:${symbol.toUpperCase()}|${from}`;
 }
 
-export function getCachedHistorical(key: string): FmpPriceBar[] | null {
-  const entry = store.get(key);
+export async function getCachedHistorical(key: string): Promise<FmpPriceBar[] | null> {
+  const shared = await cacheGet<FmpPriceBar[]>(key);
+  if (shared) return shared;
+
+  const entry = memory.get(key);
   if (!entry) return null;
   if (Date.now() > entry.expiresAt) {
-    store.delete(key);
+    memory.delete(key);
     return null;
   }
   return entry.data;
 }
 
-export function setCachedHistorical(key: string, data: FmpPriceBar[]): void {
-  store.set(key, { data, expiresAt: Date.now() + TTL_MS });
+export async function setCachedHistorical(key: string, data: FmpPriceBar[]): Promise<void> {
+  await cacheSet(key, data);
+  memory.set(key, { data, expiresAt: Date.now() + TTL_MS });
 }

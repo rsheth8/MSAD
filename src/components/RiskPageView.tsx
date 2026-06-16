@@ -16,7 +16,12 @@ export function RiskPageView() {
             <Link href="/dashboard" className="text-xs font-medium text-muted hover:text-foreground">
               ← Your dashboard
             </Link>
-            <AccountButton />
+            <div className="flex items-center gap-2">
+              <Link href="/settings" className="text-xs font-medium text-muted hover:text-foreground">
+                Settings
+              </Link>
+              <AccountButton />
+            </div>
           </div>
           <div>
             <div className="flex items-center gap-2">

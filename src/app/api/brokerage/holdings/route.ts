@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
-import { hasSnaptrade, listHoldings, snaptradeUserId } from "@/lib/brokerage/snaptrade";
-import { getBrokerageLink } from "@/lib/brokerage/store";
+import { hasSnaptrade, fetchBrokerageHoldings } from "@/lib/brokerage/snaptrade";
+import { getBrokerageLink, setBrokerageLink } from "@/lib/brokerage/store";
 
 /** Fetch the signed-in user's real holdings from their linked brokerage. */
 export async function GET(req: Request) {
@@ -18,8 +18,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const data = await listHoldings(snaptradeUserId(user.sub), link.userSecret);
-    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
+    const result = await fetchBrokerageHoldings(user.sub, link);
+    if (result.link) await setBrokerageLink(user.sub, result.link);
+    return NextResponse.json(result.holdings, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("[api/brokerage/holdings]", err);
     return NextResponse.json({ error: "Couldn't load your holdings" }, { status: 502 });

@@ -1,59 +1,77 @@
 /**
- * Stores each user's SnapTrade userSecret, keyed by MSAD account id (sub).
- * In-memory by default; durable via Vercel KV (same adapter pattern as the
- * profile store). The secret is a credential — it never leaves the server.
+ * Stores each user's SnapTrade credentials, keyed by MSAD account id (sub).
+ * Uses shared Upstash Redis when configured; in-memory fallback for local dev.
  */
+import { kvGetJson, kvSetJson, kvDel, kvConfigured } from "@/lib/kv/client";
+import type { PersonalTokens } from "./personal-oauth";
+
 const KEY_PREFIX = "msad:snaptrade:";
 
-interface Link {
+export interface CommercialLink {
+  mode: "commercial";
   userSecret: string;
 }
 
-function kvConfigured(): boolean {
-  return Boolean(process.env.KV_REST_API_URL?.trim() && process.env.KV_REST_API_TOKEN?.trim());
+export interface PersonalLink {
+  mode: "personal";
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
-const memory = new Map<string, Link>();
+export type BrokerageLink = CommercialLink | PersonalLink;
 
-async function kvGet(key: string): Promise<Link | null> {
-  const url = process.env.KV_REST_API_URL!.trim();
-  const token = process.env.KV_REST_API_TOKEN!.trim();
-  const res = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
-    headers: { authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { result: string | null };
-  if (!data.result) return null;
-  try {
-    return JSON.parse(data.result) as Link;
-  } catch {
-    return null;
-  }
+type StoredLink = BrokerageLink | { userSecret: string };
+
+function normalizeLink(raw: StoredLink): BrokerageLink | null {
+  if ("mode" in raw && raw.mode === "personal") return raw;
+  if ("mode" in raw && raw.mode === "commercial") return raw;
+  if ("userSecret" in raw && raw.userSecret) return { mode: "commercial", userSecret: raw.userSecret };
+  return null;
 }
 
-async function kvSet(key: string, value: Link): Promise<void> {
-  const url = process.env.KV_REST_API_URL!.trim();
-  const token = process.env.KV_REST_API_TOKEN!.trim();
-  await fetch(`${url}/set/${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify(value),
-    cache: "no-store",
-  });
-}
+const memory = new Map<string, BrokerageLink>();
 
-export async function getBrokerageLink(sub: string): Promise<Link | null> {
+export async function getBrokerageLink(sub: string): Promise<BrokerageLink | null> {
   const key = KEY_PREFIX + sub;
-  if (kvConfigured()) return kvGet(key);
+  if (kvConfigured()) {
+    const raw = await kvGetJson<StoredLink>(key);
+    return raw ? normalizeLink(raw) : null;
+  }
   return memory.get(key) ?? null;
 }
 
-export async function setBrokerageLink(sub: string, link: Link): Promise<void> {
+export async function setBrokerageLink(sub: string, link: BrokerageLink): Promise<void> {
   const key = KEY_PREFIX + sub;
   if (kvConfigured()) {
-    await kvSet(key, link);
+    await kvSetJson(key, link);
     return;
   }
   memory.set(key, link);
+}
+
+export async function deleteBrokerageLink(sub: string): Promise<void> {
+  const key = KEY_PREFIX + sub;
+  if (kvConfigured()) {
+    await kvDel(key);
+    return;
+  }
+  memory.delete(key);
+}
+
+export function personalTokensFromLink(link: PersonalLink): PersonalTokens {
+  return {
+    accessToken: link.accessToken,
+    refreshToken: link.refreshToken,
+    expiresAt: link.expiresAt,
+  };
+}
+
+export function personalLinkFromTokens(tokens: PersonalTokens): PersonalLink {
+  return {
+    mode: "personal",
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    expiresAt: tokens.expiresAt,
+  };
 }

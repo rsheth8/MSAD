@@ -5,6 +5,10 @@ import { AiError } from "@/lib/ai/client";
 import { explain } from "@/lib/ai/explain";
 import { normalizeDepth } from "@/lib/ai/depth";
 import { getCachedExplain, setCachedExplain } from "@/lib/cache/ai-cache";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkQuota, QUOTAS } from "@/lib/usage/quotas";
+import { getSession } from "@/lib/auth/session";
+import { captureError } from "@/lib/observability";
 import type { ExplainKind, ExplainRequest } from "@/lib/ai/types";
 
 const TICKER_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
@@ -17,10 +21,16 @@ const KINDS: ExplainKind[] = [
   "question",
   "journal",
 ];
-// kinds whose output depends only on (ticker, depth) → safe to cache
 const CACHEABLE = new Set<ExplainKind>(["metric", "overview", "bearcase", "bullcase", "price"]);
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, RATE_LIMITS.explain);
+  if (limited) return limited;
+
+  const user = await getSession(req);
+  const quotaHit = await checkQuota(user, QUOTAS.explain);
+  if (quotaHit) return quotaHit;
+
   let body: Partial<ExplainRequest>;
   try {
     body = (await req.json()) as Partial<ExplainRequest>;
@@ -47,7 +57,7 @@ export async function POST(req: Request) {
 
   const cacheKey = `${ticker}|${kind}|${depth}|${body.metricKey ?? ""}`;
   if (CACHEABLE.has(kind)) {
-    const hit = getCachedExplain(cacheKey);
+    const hit = await getCachedExplain(cacheKey);
     if (hit) return NextResponse.json(hit);
   }
 
@@ -59,7 +69,7 @@ export async function POST(req: Request) {
       thesis: body.thesis,
       horizon: body.horizon,
     });
-    if (CACHEABLE.has(kind) && result.source === "ai") setCachedExplain(cacheKey, result);
+    if (CACHEABLE.has(kind) && result.source === "ai") await setCachedExplain(cacheKey, result);
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof FmpError) {
@@ -70,7 +80,7 @@ export async function POST(req: Request) {
       const status = err.code === "CONFIG" ? 503 : 502;
       return NextResponse.json({ error: err.message }, { status });
     }
-    console.error("[api/explain]", err);
+    void captureError(err, { route: "api/explain", ticker, kind });
     return NextResponse.json({ error: "Failed to generate explanation" }, { status: 500 });
   }
 }

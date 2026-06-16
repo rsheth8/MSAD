@@ -49,17 +49,43 @@ export interface Prediction {
   resolvedAt?: string;
 }
 
+export interface UserPreferences {
+  theme?: "light" | "dark";
+  accent?: string;
+  sound?: boolean;
+  onboardingDone?: boolean;
+  learningPath?: boolean;
+  depth?: number;
+}
+
 export interface UserProfile {
   version: number;
   journal: JournalEntry[];
   predictions: Prediction[];
+  watchlist?: string[];
+  savedScreens?: Array<{
+    id: string;
+    name: string;
+    createdAt: string;
+    filters: Record<string, unknown>;
+  }>;
+  preferences?: UserPreferences;
   createdAt: string;
   updatedAt: string;
 }
 
-export const PROFILE_VERSION = 1;
+export const PROFILE_VERSION = 2;
 
 export function emptyProfile(): UserProfile {
   const now = new Date().toISOString();
-  return { version: PROFILE_VERSION, journal: [], predictions: [], createdAt: now, updatedAt: now };
+  return {
+    version: PROFILE_VERSION,
+    journal: [],
+    predictions: [],
+    watchlist: [],
+    savedScreens: [],
+    preferences: {},
+    createdAt: now,
+    updatedAt: now,
+  };
 }

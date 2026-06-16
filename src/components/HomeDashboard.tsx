@@ -138,6 +138,9 @@ export function HomeDashboard() {
               <Link href="/dashboard" className="btn-ghost interactive text-xs">
                 My dashboard
               </Link>
+              <Link href="/settings" className="btn-ghost interactive text-xs">
+                Settings
+              </Link>
               <ThemeToggle />
               <SoundToggle />
               <AccentPicker value={accent} onChange={setAccent} />

@@ -3,6 +3,8 @@ import { fmpFetch, hasFmpApiKey, FmpError } from "@/lib/fmp/client";
 import { fetchHistoricalBars } from "@/lib/fmp/historical";
 import { syntheticBars } from "@/lib/backtest/mock";
 import { computeRisk } from "@/lib/risk/engine";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureError } from "@/lib/observability";
 import type { FmpProfile } from "@/lib/fmp/types";
 import type { Holding, RiskAsset } from "@/lib/risk/types";
 
@@ -54,6 +56,9 @@ async function loadAsset(h: Holding, isMock: boolean): Promise<RiskAsset | null>
 }
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, RATE_LIMITS.risk);
+  if (limited) return limited;
+
   let body: { holdings?: Holding[] };
   try {
     body = await req.json();
@@ -85,7 +90,7 @@ export async function POST(req: Request) {
       const status = err.code === "CONFIG" ? 503 : 502;
       return NextResponse.json({ error: err.message }, { status });
     }
-    console.error("[api/risk]", err);
+    void captureError(err, { route: "api/risk" });
     return NextResponse.json({ error: "Failed to analyze portfolio" }, { status: 500 });
   }
 }

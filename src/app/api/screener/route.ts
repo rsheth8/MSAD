@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { runScreener } from "@/lib/screener/run";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { RatioFilters, ScreenerQuery } from "@/lib/screener/types";
 
 const TTL_MS = 10 * 60 * 1000;
 const cache = new Map<string, { data: unknown; expires: number }>();
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, RATE_LIMITS.screener);
+  if (limited) return limited;
+
   try {
     const body = (await req.json()) as {
       presetId?: string;

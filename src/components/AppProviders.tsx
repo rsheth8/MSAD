@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { applyTheme, getTheme, isOnboardingDone } from "@/lib/settings";
+import { MSAD_STORAGE } from "@/lib/brand";
 import { preloadContourScene } from "@/lib/preload-contour";
 import { syncWithAccount } from "@/lib/profile/store";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
@@ -15,8 +16,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     applyTheme(getTheme());
     if (!isOnboardingDone()) setShowOnboarding(true);
     preloadContourScene();
-    // If the user is signed in, pull their cloud profile and merge with local.
     void syncWithAccount();
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === MSAD_STORAGE.theme && (e.newValue === "dark" || e.newValue === "light")) {
+        applyTheme(e.newValue);
+      }
+      if (e.key === MSAD_STORAGE.accent && e.newValue) {
+        document.documentElement.style.setProperty("--accent", e.newValue);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   return (

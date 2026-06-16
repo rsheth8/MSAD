@@ -1,6 +1,7 @@
 import type { ProFilterState } from "./types";
 
 import { MSAD_STORAGE } from "@/lib/brand";
+import { syncPrefsToCloud } from "@/lib/profile/store";
 
 const KEY = MSAD_STORAGE.savedScreens;
 
@@ -30,11 +31,13 @@ export function saveScreen(name: string, filters: ProFilterState): SavedScreen[]
   };
   const next = [entry, ...list].slice(0, 12);
   localStorage.setItem(KEY, JSON.stringify(next));
+  syncPrefsToCloud();
   return next;
 }
 
 export function deleteSavedScreen(id: string): SavedScreen[] {
   const next = getSavedScreens().filter((s) => s.id !== id);
   localStorage.setItem(KEY, JSON.stringify(next));
+  syncPrefsToCloud();
   return next;
 }

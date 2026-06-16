@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
+import { ThemeInit } from "@/components/ThemeInit";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
@@ -47,9 +48,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ThemeInit />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

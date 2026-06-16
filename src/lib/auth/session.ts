@@ -5,14 +5,18 @@
  */
 import { authSecret } from "./config";
 import type { AuthUser } from "./config";
+import { getRevocationTime } from "./revocation";
 
 export const SESSION_COOKIE = "msad_session";
 export const STATE_COOKIE = "msad_oauth_state";
 const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days
+/** Re-issue the cookie when less than this many seconds remain. */
+const REFRESH_THRESHOLD_S = 60 * 60 * 24 * 7; // 7 days
 
 interface SessionPayload extends AuthUser {
   iat: number;
   exp: number;
+  sid: string;
 }
 
 function b64urlEncode(bytes: Uint8Array): string {
@@ -39,9 +43,14 @@ async function hmacKey(): Promise<CryptoKey> {
   );
 }
 
-export async function signSession(user: AuthUser): Promise<string> {
+export async function signSession(user: AuthUser, existingSid?: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const payload: SessionPayload = { ...user, iat: now, exp: now + MAX_AGE_S };
+  const payload: SessionPayload = {
+    ...user,
+    iat: now,
+    exp: now + MAX_AGE_S,
+    sid: existingSid ?? crypto.randomUUID(),
+  };
   const enc = new TextEncoder();
   const header = b64urlEncode(enc.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
   const body = b64urlEncode(enc.encode(JSON.stringify(payload)));
@@ -67,6 +76,8 @@ export async function verifySession(token: string | undefined): Promise<AuthUser
     const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(body))) as SessionPayload;
     if (typeof payload.exp !== "number" || payload.exp < Math.floor(Date.now() / 1000)) return null;
     if (!payload.sub) return null;
+    const revokedBefore = await getRevocationTime(payload.sub);
+    if (typeof payload.iat === "number" && payload.iat < revokedBefore) return null;
     return { sub: payload.sub, email: payload.email, name: payload.name, picture: payload.picture };
   } catch {
     return null;
@@ -87,6 +98,37 @@ export function readCookie(req: Request, name: string): string | undefined {
 
 export async function getSession(req: Request): Promise<AuthUser | null> {
   return verifySession(readCookie(req, SESSION_COOKIE));
+}
+
+/** Returns a refreshed session token if the cookie is nearing expiry. */
+export async function maybeRefreshSession(req: Request): Promise<string | null> {
+  const token = readCookie(req, SESSION_COOKIE);
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(
+      new TextDecoder().decode(b64urlDecode(parts[1]!)),
+    ) as SessionPayload;
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp - now > REFRESH_THRESHOLD_S) return null;
+    const user = await verifySession(token);
+    if (!user) return null;
+    return signSession(user, payload.sid);
+  } catch {
+    return null;
+  }
+}
+
+/** Attach a refreshed session cookie to a response if needed. */
+export function attachRefreshedSession(res: Response, newToken: string | null): Response {
+  if (!newToken) return res;
+  const next = new Response(res.body, res);
+  next.headers.set(
+    "Set-Cookie",
+    `${SESSION_COOKIE}=${encodeURIComponent(newToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE_S}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
+  );
+  return next;
 }
 
 export const sessionCookieOptions = {

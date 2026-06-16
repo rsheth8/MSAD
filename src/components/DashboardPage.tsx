@@ -66,6 +66,9 @@ export function DashboardPage() {
               <Link href="/risk" className="btn-ghost interactive text-xs">
                 Risk X-ray
               </Link>
+              <Link href="/settings" className="btn-ghost interactive text-xs">
+                Settings
+              </Link>
               <Link href="/discover" className="btn-ghost interactive text-xs">
                 Find a stock
               </Link>
