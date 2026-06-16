@@ -13,6 +13,8 @@ const pages = [
   "/stock/MSFT",
   "/dashboard",
   "/practice",
+  "/replay",
+  "/risk",
 ];
 
 const apis = [
@@ -27,6 +29,7 @@ const apis = [
   "/api/earnings/AAPL",
   "/api/options/AAPL",
   "/api/auth/session",
+  "/api/replay",
 ];
 
 const postApis = [
@@ -34,6 +37,7 @@ const postApis = [
   { path: "/api/explore", body: { filters: {}, sortKey: "marketCap", sortDir: "desc" } },
   { path: "/api/explain", body: { ticker: "AAPL", kind: "overview", depth: "learn" } },
   { path: "/api/backtest", body: { ticker: "AAPL", kind: "sma-cross", smaWindow: 50, costBps: 10, years: 5 } },
+  { path: "/api/risk", body: { holdings: [{ ticker: "AAPL", weight: 50 }, { ticker: "MSFT", weight: 50 }] } },
 ];
 
 async function test(path, opts = {}) {

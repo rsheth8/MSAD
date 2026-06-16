@@ -26,7 +26,12 @@ export function PracticePage() {
             <Link href="/dashboard" className="text-xs font-medium text-muted hover:text-foreground">
               ← Your dashboard
             </Link>
-            <AccountButton />
+            <div className="flex items-center gap-2">
+              <Link href="/replay" className="btn-ghost interactive text-xs">
+                Market Replay
+              </Link>
+              <AccountButton />
+            </div>
           </div>
           <div>
             <div className="flex items-center gap-2">

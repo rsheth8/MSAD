@@ -24,6 +24,8 @@ export const MSAD_STORAGE = {
   screenerExclusions: "msad-screener-exclusions",
   depth: "msad-depth",
   profile: "msad-profile",
+  holdings: "msad-holdings",
+  replayStats: "msad-replay-stats",
 } as const;
 
 export const MSAD_EVENTS = {

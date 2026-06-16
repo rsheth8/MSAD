@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/format.test.ts src/lib/ticker.test.ts src/lib/validators.test.ts src/lib/news/analysis.test.ts src/lib/search.test.ts src/lib/ai/depth.test.ts src/lib/profile/calibration.test.ts src/lib/auth/session.test.ts src/lib/backtest/engine.test.ts",
+    "test": "node --import tsx --test src/lib/format.test.ts src/lib/ticker.test.ts src/lib/validators.test.ts src/lib/news/analysis.test.ts src/lib/search.test.ts src/lib/ai/depth.test.ts src/lib/profile/calibration.test.ts src/lib/auth/session.test.ts src/lib/backtest/engine.test.ts src/lib/replay/score.test.ts src/lib/risk/engine.test.ts",
     "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {

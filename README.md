@@ -24,6 +24,12 @@ real market.
   average trend filter) against real EOD history vs buy-and-hold and the S&P
   500. Every result ships with the honest caveats — survivorship bias,
   overfitting, costs, no look-ahead — so a backtest can't fool you.
+- **Market Replay** (`/replay`) — trade a real, anonymized stretch of history
+  one day at a time, blind to the future, then see your timing vs buy-and-hold.
+  The best cure for hindsight bias.
+- **Portfolio Risk X-ray** (`/risk`) — paste your holdings and see hidden
+  concentration, sector tilt, correlation, and a beta-based estimate of what a
+  market crash could cost you.
 - **Your dashboard** (`/dashboard`) — journal, predictions, calibration, and
   watchlist in one place. Saved locally as a guest; synced to your **Google
   account** across devices when signed in.
@@ -84,6 +90,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `POST /api/explore` | Explore universe filters |
 | `POST /api/explain` | The Lens — grounded AI explanation at a depth |
 | `POST /api/backtest` | Hypothesis Lab — backtest a rule vs buy-hold & SPY |
+| `GET /api/replay` | Market Replay — a random anonymized price window |
+| `POST /api/risk` | Portfolio Risk X-ray — concentration, beta, crash math |
 | `GET/PUT /api/profile` | Signed-in user's cloud progress |
 | `GET /api/auth/session` | Current user + whether auth is enabled |
 | `GET /api/auth/google` | Start Google sign-in (when configured) |
