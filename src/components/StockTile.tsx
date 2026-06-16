@@ -31,7 +31,7 @@ export function StockTile({
 
   useEffect(() => setMounted(true), []);
 
-  const shellClass = `group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/15 backdrop-blur-xl backdrop-saturate-150 interactive hover:scale-[1.04] hover:z-10 ${
+  const shellClass = `group carousel-tile relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/15 backdrop-blur-xl backdrop-saturate-150 interactive hover:scale-[1.04] hover:z-10 ${
     pulse ? "ring-2 ring-white/50" : ""
   } ${large ? "h-44 w-64 sm:h-52 sm:w-72" : "h-36 w-44 sm:h-40 sm:w-52"}`;
   const shellStyle = {

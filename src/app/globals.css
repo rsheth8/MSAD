@@ -373,6 +373,18 @@ body {
   background: var(--accent);
 }
 
+/* Carousel tiles use backdrop-blur for the frosted-glass look. On a moving
+   element that forces the GPU to re-blur the (WebGL) backdrop every frame —
+   fine on desktop, but it wrecks scroll smoothness on phones. Drop the frost
+   on touch / small screens, where it's least visible and most expensive. The
+   tile's own gradient already reads as a solid colored card without it. */
+@media (hover: none), (max-width: 640px) {
+  .carousel-tile {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
 /* Market pulse ticker auto-scrolls via HorizontalScrollLane.tsx */
 
 @media (prefers-reduced-motion: reduce) {
