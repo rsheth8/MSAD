@@ -22,6 +22,8 @@ export const MSAD_STORAGE = {
   chartPrefs: "msad-chart-prefs",
   savedScreens: "msad-saved-screens",
   screenerExclusions: "msad-screener-exclusions",
+  depth: "msad-depth",
+  profile: "msad-profile",
 } as const;
 
 export const MSAD_EVENTS = {
@@ -29,6 +31,8 @@ export const MSAD_EVENTS = {
   watchlist: "msad-watchlist",
   expandMetric: "msad-expand-metric",
   closePanels: "msad-close-panels",
+  depth: "msad-depth-change",
+  profile: "msad-profile-change",
 } as const;
 
 export const MSAD_DOM = {
