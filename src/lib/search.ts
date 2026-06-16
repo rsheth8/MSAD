@@ -44,15 +44,13 @@ export function searchCatalog(query: string, limit = 8): SymbolHit[] {
     .map((item) => {
       const score = scoreCatalogHit(item, needle);
       if (score == null) return null;
-      return {
-        hit: {
-          symbol: item.ticker,
-          name: item.name,
-          exchange: item.kind === "etf" ? "ETF" : undefined,
-          source: "catalog" as const,
-        },
-        score,
+      const hit: SymbolHit = {
+        symbol: item.ticker,
+        name: item.name,
+        source: "catalog",
+        ...(item.kind === "etf" ? { exchange: "ETF" } : {}),
       };
+      return { hit, score };
     })
     .filter((row): row is { hit: SymbolHit; score: number } => row !== null)
     .sort((a, b) => b.score - a.score || a.hit.symbol.localeCompare(b.hit.symbol))
@@ -64,11 +62,12 @@ function mapFmpRow(row: FmpSearchRow): SymbolHit | null {
   const symbol = row.symbol?.trim().toUpperCase();
   const name = row.name?.trim();
   if (!symbol || !name) return null;
+  const exchange = row.exchangeShortName ?? row.exchange;
   return {
     symbol,
     name,
-    exchange: row.exchangeShortName ?? row.exchange,
     source: "fmp",
+    ...(exchange ? { exchange } : {}),
   };
 }
 
