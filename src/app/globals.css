@@ -210,6 +210,26 @@ body {
   box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
+/* Animated tab pills (TabPills component) */
+.tab-pills {
+  position: relative;
+}
+.tab-pill-btn {
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+.tab-pill-btn:not([aria-selected="true"]):hover {
+  color: var(--foreground);
+}
+.tab-pill-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 .btn-ghost {
   border-radius: 9999px;
   border: 1px solid var(--border);
@@ -371,6 +391,19 @@ body {
 }
 .scroll-lane::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
+}
+
+/* Mobile carousel motion: a GPU-composited transform marquee. The lane content
+   is duplicated by the caller, so translating the track -50% loops seamlessly.
+   Runs on the compositor thread, so it stays smooth on phones where JS-driven
+   scrollLeft stutters. (Used by HorizontalScrollLane on mobile only.) */
+@keyframes lane-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* Carousel tiles use backdrop-blur for the frosted-glass look. On a moving
