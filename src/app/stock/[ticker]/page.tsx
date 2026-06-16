@@ -146,6 +146,9 @@ export default function StockReportPage() {
 
           <DepthSlider />
 
+          <Link href={`/practice?ticker=${ticker}`} className="btn-ghost interactive">
+            Test a hypothesis
+          </Link>
           <Link href="/dashboard" className="btn-ghost interactive">
             My dashboard
           </Link>

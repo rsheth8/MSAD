@@ -56,6 +56,14 @@ export function DashboardPage() {
               predictions, and watch your calibration improve — the honest signal that you&apos;re
               ready to risk real money.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/practice" className="btn-primary text-xs">
+                Test a hypothesis →
+              </Link>
+              <Link href="/discover" className="btn-ghost interactive text-xs">
+                Find a stock
+              </Link>
+            </div>
           </div>
         </header>
 

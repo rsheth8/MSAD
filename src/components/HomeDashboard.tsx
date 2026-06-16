@@ -132,6 +132,9 @@ export function HomeDashboard() {
               <Link href="/news" className="btn-ghost interactive text-xs">
                 Market news
               </Link>
+              <Link href="/practice" className="btn-ghost interactive text-xs">
+                Hypothesis Lab
+              </Link>
               <Link href="/dashboard" className="btn-ghost interactive text-xs">
                 My dashboard
               </Link>
