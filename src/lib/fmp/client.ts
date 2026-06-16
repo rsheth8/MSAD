@@ -49,7 +49,7 @@ function releaseSlot(): void {
   if (next) next();
 }
 
-function retryDelayMs(attempt: number, res?: Response): number {
+function retryDelayMs(attempt: number, res?: Response | null): number {
   const retryAfter = res?.headers.get("retry-after");
   if (retryAfter) {
     const secs = Number(retryAfter);
