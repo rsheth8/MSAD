@@ -18,6 +18,8 @@ import { GlassCard } from "./GlassCard";
 import { ThemeToggle, SoundToggle } from "./OnboardingModal";
 import { TickerSearch } from "./TickerSearch";
 import { NeutralBackdrop } from "./NeutralBackdrop";
+import { CriteriaSearch } from "@/components/discovery/CriteriaSearch";
+import { useProfile } from "@/lib/profile/useProfile";
 
 type Mode = "learn" | "pro";
 
@@ -49,6 +51,7 @@ function buildProRequest(pro: ProFilterState, excludeSymbols: string[]) {
 
 export function DiscoverPage() {
   const router = useRouter();
+  const userProfile = useProfile();
   const [mode, setMode] = useState<Mode>("learn");
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [pro, setPro] = useState<ProFilterState>(DEFAULT_PRO_FILTERS);
@@ -130,6 +133,10 @@ export function DiscoverPage() {
         </header>
 
         <ExcludePanel exclusions={exclusions} onChange={setExclusions} />
+
+        <div className="mb-6">
+          <CriteriaSearch investorProfile={userProfile.investorProfile} />
+        </div>
 
         <div className="mb-6 flex w-fit rounded-full p-0.5 surface text-xs font-medium">
           <button

@@ -73,6 +73,12 @@ export interface ProFilterState {
   reversePeVsIndustry: boolean;
 }
 
+export interface RatioSnapshot {
+  pe: number | null;
+  roe: number | null;
+  evEbitda: number | null;
+}
+
 export interface ScreenerRequest {
   presetId?: string;
   query?: ScreenerQuery;
@@ -81,6 +87,10 @@ export interface ScreenerRequest {
   excludeSymbols?: string[];
   reverseMetric?: "pe" | "roe";
   reverseMinPct?: number;
+  /** Cap ratio enrichment calls (default 28). Discovery uses a lower cap. */
+  enrichCap?: number;
+  /** Dedupe ratio fetches across multiple screeners in one request. */
+  ratioCache?: Map<string, RatioSnapshot>;
 }
 
 export const DEFAULT_PRO_FILTERS: ProFilterState = {

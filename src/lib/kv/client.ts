@@ -34,7 +34,11 @@ const memStrings = new Map<string, string>();
 const memCounters = new Map<string, { count: number; expiresAt: number }>();
 
 function memGet(key: string): string | null {
-  return memStrings.get(key) ?? null;
+  const str = memStrings.get(key);
+  if (str != null) return str;
+  const entry = memCounters.get(key);
+  if (!entry || Date.now() > entry.expiresAt) return null;
+  return String(entry.count);
 }
 
 function memSet(key: string, value: string): void {

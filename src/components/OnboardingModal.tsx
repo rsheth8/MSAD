@@ -16,6 +16,11 @@ import {
   type ThemeMode,
 } from "@/lib/settings";
 import { BRAND, MSAD_STORAGE } from "@/lib/brand";
+import { applyStyleDefaults } from "@/lib/discovery/investor-profile";
+import { defaultProfileFromOnboarding } from "@/lib/discovery/profile-to-screener";
+import type { AccountSize, InvestingHorizon, InvestingStyle, RiskComfort } from "@/lib/discovery/types";
+import { STYLE_LABELS } from "@/lib/discovery/investor-profile";
+import { setInvestorProfile } from "@/lib/profile/store";
 
 export function OnboardingModal({ onDone }: { onDone: () => void }) {
   const [open, setOpen] = useState(true);
@@ -24,6 +29,12 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
   const [theme, setThemeLocal] = useState<ThemeMode>("light");
   const [sound, setSound] = useState(false);
   const [stars, setStars] = useState<string[]>([]);
+  const [style, setStyle] = useState<InvestingStyle>("learning");
+  const [horizon, setHorizon] = useState<InvestingHorizon>("medium");
+  const [risk, setRisk] = useState<RiskComfort>("moderate");
+  const [account, setAccount] = useState<AccountSize>("small");
+
+  const totalSteps = 4;
 
   useEffect(() => {
     setThemeLocal(getTheme());
@@ -38,6 +49,14 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
     document.documentElement.style.setProperty("--accent", accent);
     localStorage.setItem(MSAD_STORAGE.accent, accent);
     setWatchlist([...getWatchlist(), ...stars]);
+    setInvestorProfile(
+      applyStyleDefaults(style, defaultProfileFromOnboarding({
+        style,
+        horizon,
+        riskComfort: risk,
+        accountSize: account,
+      })),
+    );
     setOpen(false);
     onDone();
     playUiClick();
@@ -65,7 +84,8 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
             <h2 className="mt-1 font-display text-xl font-bold">
               {step === 0 && "Learn stocks the friendly way"}
               {step === 1 && "Pick your accent"}
-              {step === 2 && "Star a few tickers"}
+              {step === 2 && "How do you invest?"}
+              {step === 3 && "Star a few tickers"}
             </h2>
 
             {step === 0 && (
@@ -110,6 +130,56 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
             )}
 
             {step === 2 && (
+              <div className="mt-4 space-y-3">
+                <p className="text-xs text-muted">
+                  We&apos;ll use this for your research queue — stocks worth studying, not buy tips.
+                </p>
+                <div>
+                  <div className="text-xs font-medium text-foreground">Style</div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {(["learning", "income", "growth", "value", "balanced"] as InvestingStyle[]).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setStyle(s)}
+                        className={`btn-chip text-[0.65rem] ${style === s ? "btn-chip-active" : "btn-chip-inactive"}`}
+                      >
+                        {STYLE_LABELS[s]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="block text-xs">
+                  <span className="font-medium text-foreground">Horizon</span>
+                  <select
+                    value={horizon}
+                    onChange={(e) => setHorizon(e.target.value as InvestingHorizon)}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                  >
+                    <option value="short">Short</option>
+                    <option value="medium">Medium</option>
+                    <option value="long">Long</option>
+                  </select>
+                </label>
+                <div>
+                  <div className="text-xs font-medium text-foreground">Risk comfort</div>
+                  <div className="mt-1 flex gap-1">
+                    {(["calm", "moderate", "aggressive"] as RiskComfort[]).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRisk(r)}
+                        className={`btn-chip flex-1 capitalize text-[0.65rem] ${risk === r ? "btn-chip-active" : "btn-chip-inactive"}`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {picks.map((p) => {
                   const on = stars.includes(p.ticker);
@@ -141,7 +211,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
                   Skip
                 </button>
               )}
-              {step < 2 ? (
+              {step < totalSteps - 1 ? (
                 <button type="button" className="btn-primary" onClick={() => setStep((s) => s + 1)}>
                   Next
                 </button>

@@ -26,6 +26,7 @@ import { ShareButton, StoryExportButton } from "@/components/ShareExport";
 import { SoundToggle, ThemeToggle } from "@/components/OnboardingModal";
 import { DepthSlider } from "@/components/ai/DepthSlider";
 import { AskPanel } from "@/components/ai/AskPanel";
+import { BeforeYouActPanel } from "@/components/discovery/BeforeYouActPanel";
 import { JournalPanel } from "@/components/journal/JournalPanel";
 import { AccountButton } from "@/components/auth/AccountButton";
 import { useDepth } from "@/components/ai/DepthProvider";
@@ -201,6 +202,7 @@ export default function StockReportPage() {
 
           {/* The Lens + the Journal — kept out of the PNG export root */}
           <div id="section-lens" className="mt-8 space-y-6">
+            <BeforeYouActPanel ticker={ticker} />
             <AskPanel ticker={ticker} />
             <JournalPanel ticker={ticker} price={data.price} />
           </div>

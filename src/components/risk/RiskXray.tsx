@@ -5,6 +5,7 @@ import { requestRisk } from "@/lib/risk/request";
 import type { Holding, RiskResult } from "@/lib/risk/types";
 import { BrokerageConnect } from "@/components/brokerage/BrokerageConnect";
 import { MSAD_STORAGE } from "@/lib/brand";
+import { setMockPortfolio } from "@/lib/profile/store";
 
 interface Row {
   ticker: string;
@@ -62,6 +63,7 @@ export function RiskXray() {
     }
     try {
       localStorage.setItem(MSAD_STORAGE.holdings, JSON.stringify(holdings));
+      setMockPortfolio(holdings);
     } catch {
       /* ignore */
     }

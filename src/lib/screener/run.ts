@@ -1,11 +1,13 @@
 import { allCatalogTickers } from "@/lib/catalog";
 import { fetchPeerAverages } from "@/lib/aggregator/peers";
+import { runPool } from "@/lib/async";
 import { fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
 import type { FmpKeyMetricsTtm, FmpRatiosTtm } from "@/lib/fmp/types";
 import { getMockScreenerResults } from "@/lib/screener/mock";
 import { getPreset } from "@/lib/screener/presets";
 import type {
   RatioFilters,
+  RatioSnapshot,
   ScreenerQuery,
   ScreenerRequest,
   ScreenerResultRow,
@@ -25,6 +27,7 @@ interface FmpScreenerRow {
 }
 
 const ENRICH_CAP = 28;
+const ENRICH_CONCURRENCY = 3;
 const REVERSE_CAP = 18;
 const catalogSet = () => new Set(allCatalogTickers());
 
@@ -67,28 +70,37 @@ function sortRows(rows: ScreenerResultRow[], sortBy?: ScreenerRequest["sortBy"])
   }
 }
 
-async function enrichRatios(symbol: string): Promise<{
-  pe: number | null;
-  roe: number | null;
-  evEbitda: number | null;
-}> {
+async function enrichRatios(
+  symbol: string,
+  cache?: Map<string, RatioSnapshot>,
+): Promise<RatioSnapshot> {
+  const hit = cache?.get(symbol);
+  if (hit) return hit;
+
   try {
     const [ratios, metrics] = await Promise.all([
       fmpFetch<FmpRatiosTtm[]>("/ratios-ttm", { symbol }),
       fmpFetch<FmpKeyMetricsTtm[]>("/key-metrics-ttm", { symbol }),
     ]);
-    return {
+    const snapshot: RatioSnapshot = {
       pe: ratios[0]?.priceToEarningsRatioTTM ?? null,
       roe: metrics[0]?.returnOnEquityTTM ?? null,
       evEbitda: metrics[0]?.evToEBITDATTM ?? null,
     };
+    cache?.set(symbol, snapshot);
+    return snapshot;
   } catch {
-    return { pe: null, roe: null, evEbitda: null };
+    const empty: RatioSnapshot = { pe: null, roe: null, evEbitda: null };
+    cache?.set(symbol, empty);
+    return empty;
   }
 }
 
-async function enrichVsPeers(row: ScreenerResultRow): Promise<ScreenerResultRow> {
-  const ratios = await enrichRatios(row.symbol);
+async function enrichVsPeers(
+  row: ScreenerResultRow,
+  cache?: Map<string, RatioSnapshot>,
+): Promise<ScreenerResultRow> {
+  const ratios = await enrichRatios(row.symbol, cache);
   const peerAvgs = await fetchPeerAverages(row.symbol);
   return {
     ...row,
@@ -170,14 +182,16 @@ export async function runScreener(req: ScreenerRequest): Promise<{
     Boolean(reverseMetric);
 
   if (needsRatios && rows.length) {
-    const cap = reverseMetric ? REVERSE_CAP : ENRICH_CAP;
+    const cap = req.enrichCap ?? (reverseMetric ? REVERSE_CAP : ENRICH_CAP);
     const slice = rows.slice(0, cap);
-    const enriched = await Promise.all(
-      slice.map(async (row) => {
-        if (reverseMetric) return enrichVsPeers(row);
-        const ratios = await enrichRatios(row.symbol);
+    const enriched = await runPool(
+      slice,
+      async (row) => {
+        if (reverseMetric) return enrichVsPeers(row, req.ratioCache);
+        const ratios = await enrichRatios(row.symbol, req.ratioCache);
         return { ...row, ...ratios };
-      }),
+      },
+      ENRICH_CONCURRENCY,
     );
     rows = enriched.filter((r) => passesRatioFilters(r, ratioFilters));
     if (reverseMetric) {

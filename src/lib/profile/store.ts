@@ -10,13 +10,17 @@ import {
   emptyProfile,
   PROFILE_VERSION,
   type Conviction,
+  type InvestorProfile,
   type JournalEntry,
   type JournalOutcome,
+  type MockHolding,
   type Prediction,
   type PredictionKind,
+  type ResearchQueueItem,
   type UserProfile,
 } from "./types";
 import { mergeProfiles } from "./merge";
+import { normalizeInvestorProfile } from "@/lib/discovery/investor-profile";
 import { applyPrefsToLocal, collectLocalPrefs, enrichProfileWithLocal } from "./prefs";
 
 let current: UserProfile | null = null;
@@ -27,15 +31,38 @@ function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
+function migrateHoldingsFromLegacy(p: UserProfile): MockHolding[] {
+  if (p.mockPortfolio?.length) return p.mockPortfolio;
+  if (!isBrowser()) return [];
+  try {
+    const raw = localStorage.getItem(MSAD_STORAGE.holdings);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as MockHolding[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((h) => h?.ticker)
+      .map((h) => ({ ticker: h.ticker.toUpperCase(), weight: Number(h.weight) || 1 }));
+  } catch {
+    return [];
+  }
+}
+
 function migrateProfile(parsed: UserProfile): UserProfile {
-  if (parsed.version >= PROFILE_VERSION) return parsed;
-  return {
-    ...parsed,
-    version: PROFILE_VERSION,
-    watchlist: parsed.watchlist ?? [],
-    savedScreens: parsed.savedScreens ?? [],
-    preferences: parsed.preferences ?? {},
-  };
+  let p = parsed;
+  if (parsed.version < PROFILE_VERSION) {
+    p = {
+      ...parsed,
+      version: PROFILE_VERSION,
+      watchlist: parsed.watchlist ?? [],
+      savedScreens: parsed.savedScreens ?? [],
+      preferences: parsed.preferences ?? {},
+      mockPortfolio: migrateHoldingsFromLegacy(parsed),
+      researchQueue: parsed.researchQueue ?? [],
+      researchShortlist: parsed.researchShortlist ?? [],
+      investorProfile: parsed.investorProfile,
+    };
+  }
+  return p;
 }
 
 function loadLocal(): UserProfile {
@@ -175,6 +202,71 @@ export function resolvePrediction(id: string, outcome: boolean) {
 export function deletePrediction(id: string) {
   const p = getProfile();
   commit({ ...p, predictions: p.predictions.filter((pr) => pr.id !== id) });
+}
+
+export function setInvestorProfile(profile: InvestorProfile) {
+  const p = getProfile();
+  commit({
+    ...p,
+    investorProfile: {
+      ...normalizeInvestorProfile(profile),
+      profileComplete: true,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+}
+
+export function setMockPortfolio(holdings: MockHolding[]) {
+  const p = getProfile();
+  const cleaned = holdings
+    .filter((h) => h.ticker?.trim())
+    .map((h) => ({ ticker: h.ticker.toUpperCase().trim(), weight: Number(h.weight) || 1 }))
+    .slice(0, 15);
+  commit({ ...p, mockPortfolio: cleaned });
+  if (isBrowser()) {
+    try {
+      localStorage.setItem(MSAD_STORAGE.holdings, JSON.stringify(cleaned));
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function setResearchQueue(queue: ResearchQueueItem[], refreshedAt?: string) {
+  const p = getProfile();
+  commit({
+    ...p,
+    researchQueue: queue,
+    queueRefreshedAt: refreshedAt ?? new Date().toISOString(),
+  });
+}
+
+export function addToResearchShortlist(symbol: string) {
+  const sym = symbol.toUpperCase();
+  const p = getProfile();
+  const list = p.researchShortlist ?? [];
+  if (list.includes(sym)) return;
+  commit({ ...p, researchShortlist: [...list, sym].slice(0, 8) });
+}
+
+export function removeFromResearchShortlist(symbol: string) {
+  const p = getProfile();
+  commit({
+    ...p,
+    researchShortlist: (p.researchShortlist ?? []).filter((s) => s !== symbol.toUpperCase()),
+  });
+}
+
+export function addManualQueueItem(item: ResearchQueueItem) {
+  const p = getProfile();
+  const queue = p.researchQueue ?? [];
+  if (queue.some((q) => q.symbol === item.symbol)) return;
+  commit({ ...p, researchQueue: [item, ...queue].slice(0, 25) });
+}
+
+export function markDashboardVisit() {
+  const p = getProfile();
+  commit({ ...p, lastDashboardVisit: new Date().toISOString() }, { push: false });
 }
 
 /** Push watchlist/settings changes to cloud after localStorage modules update. */

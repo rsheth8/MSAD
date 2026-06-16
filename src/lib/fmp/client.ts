@@ -3,6 +3,8 @@ const FMP_V4_BASE = "https://financialmodelingprep.com/api/v4";
 
 export { FMP_BASE, FMP_V4_BASE };
 
+import { recordFmpCall } from "@/lib/fmp/usage";
+
 export class FmpError extends Error {
   constructor(
     message: string,
@@ -20,9 +22,39 @@ function getApiKey(): string {
 }
 
 const RETRY_STATUSES = new Set([429, 503]);
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 4;
 
-function retryDelayMs(attempt: number): number {
+/** Max in-flight FMP requests — keeps bursts under provider rate limits. */
+const MAX_CONCURRENT = Number(process.env.FMP_MAX_CONCURRENT ?? 3);
+/** Minimum spacing between request starts (~4 req/s ≈ 240/min on Starter). */
+const MIN_INTERVAL_MS = Number(process.env.FMP_MIN_INTERVAL_MS ?? 250);
+
+let active = 0;
+let lastStartAt = 0;
+const waiters: Array<() => void> = [];
+
+async function acquireSlot(): Promise<void> {
+  while (active >= MAX_CONCURRENT) {
+    await new Promise<void>((resolve) => waiters.push(resolve));
+  }
+  const gap = MIN_INTERVAL_MS - (Date.now() - lastStartAt);
+  if (gap > 0) await new Promise((resolve) => setTimeout(resolve, gap));
+  lastStartAt = Date.now();
+  active++;
+}
+
+function releaseSlot(): void {
+  active--;
+  const next = waiters.shift();
+  if (next) next();
+}
+
+function retryDelayMs(attempt: number, res?: Response): number {
+  const retryAfter = res?.headers.get("retry-after");
+  if (retryAfter) {
+    const secs = Number(retryAfter);
+    if (Number.isFinite(secs) && secs > 0) return secs * 1000;
+  }
   return 1000 * 2 ** attempt;
 }
 
@@ -38,22 +70,29 @@ export async function fmpFetch<T>(
   }
   url.searchParams.set("apikey", getApiKey());
 
-  let res: Response | null = null;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    res = await fetch(url.toString(), { cache: "no-store" });
-    if (res.ok || !RETRY_STATUSES.has(res.status) || attempt === MAX_RETRIES) break;
-    await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt)));
-  }
+  void recordFmpCall();
 
-  if (!res!.ok) {
-    throw new FmpError(`FMP request failed (${res!.status}) for ${path}`, "HTTP");
-  }
+  await acquireSlot();
+  try {
+    let res: Response | null = null;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      res = await fetch(url.toString(), { cache: "no-store" });
+      if (res.ok || !RETRY_STATUSES.has(res.status) || attempt === MAX_RETRIES) break;
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt, res)));
+    }
 
-  const data = (await res!.json()) as T;
-  if (data === null || data === undefined) {
-    throw new FmpError(`Empty response for ${path}`, "PARSE");
+    if (!res!.ok) {
+      throw new FmpError(`FMP request failed (${res!.status}) for ${path}`, "HTTP");
+    }
+
+    const data = (await res!.json()) as T;
+    if (data === null || data === undefined) {
+      throw new FmpError(`Empty response for ${path}`, "PARSE");
+    }
+    return data;
+  } finally {
+    releaseSlot();
   }
-  return data;
 }
 
 export function hasFmpApiKey(): boolean {

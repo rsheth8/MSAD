@@ -11,6 +11,10 @@ import { JournalFeed } from "@/components/journal/JournalFeed";
 import { useProfile } from "@/lib/profile/useProfile";
 import { useSession } from "@/lib/auth/useSession";
 import { getWatchlist } from "@/lib/watchlist";
+import { PassiveDigest } from "@/components/discovery/PassiveDigest";
+import { ResearchQueuePanel } from "@/components/discovery/ResearchQueuePanel";
+import { FmpApiBudget } from "@/components/dashboard/FmpApiBudget";
+import { markDashboardVisit } from "@/lib/profile/store";
 import { MSAD_EVENTS, BRAND } from "@/lib/brand";
 
 export function DashboardPage() {
@@ -28,6 +32,7 @@ export function DashboardPage() {
     else if (q === "error") setAuthNotice("Sign-in didn't complete. Please try again.");
     else if (q === "unconfigured")
       setAuthNotice("Accounts aren't configured on this deployment yet — you're in local mode.");
+    markDashboardVisit();
     return () => window.removeEventListener(MSAD_EVENTS.watchlist, sync);
   }, []);
 
@@ -104,7 +109,13 @@ export function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <PassiveDigest profile={profile} />
+
+        <FmpApiBudget />
+
+        <ResearchQueuePanel profile={profile} />
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* left rail */}
           <div className="space-y-6">
             <CalibrationCard predictions={profile.predictions} />

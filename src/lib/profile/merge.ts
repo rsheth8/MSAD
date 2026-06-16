@@ -2,7 +2,8 @@
  * Smart merge for multi-device profile sync. Per-item conflict resolution
  * instead of whole-profile last-write-wins.
  */
-import type { JournalEntry, Prediction, UserProfile } from "./types";
+import type { JournalEntry, Prediction, ResearchQueueItem, UserProfile } from "./types";
+import { normalizeInvestorProfile } from "@/lib/discovery/investor-profile";
 
 type SavedScreen = NonNullable<UserProfile["savedScreens"]>[number];
 
@@ -59,6 +60,47 @@ function mergeSavedScreens(a: SavedScreen[], b: SavedScreen[]): SavedScreen[] {
     .slice(0, 12);
 }
 
+function mergeResearchQueue(a: ResearchQueueItem[], b: ResearchQueueItem[]): ResearchQueueItem[] {
+  const map = new Map<string, ResearchQueueItem>();
+  for (const item of [...a, ...b]) {
+    const existing = map.get(item.symbol);
+    if (!existing || item.matchScore > existing.matchScore) {
+      map.set(item.symbol, item);
+    }
+  }
+  return [...map.values()]
+    .sort((x, y) => y.matchScore - x.matchScore)
+    .slice(0, 25);
+}
+
+function mergeShortlist(a: string[], b: string[]): string[] {
+  return [...new Set([...a, ...b].map((t) => t.toUpperCase()).filter(Boolean))].slice(0, 8);
+}
+
+function mergeMockPortfolio(
+  a: UserProfile["mockPortfolio"],
+  b: UserProfile["mockPortfolio"],
+  aUpdated: string,
+  bUpdated: string,
+): UserProfile["mockPortfolio"] {
+  const newer = new Date(aUpdated).getTime() >= new Date(bUpdated).getTime() ? a : b;
+  return newer ?? [];
+}
+
+function mergeInvestorProfile(
+  a: UserProfile["investorProfile"],
+  b: UserProfile["investorProfile"],
+  aUpdated: string,
+  bUpdated: string,
+): UserProfile["investorProfile"] {
+  const aTime = a?.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+  const bTime = b?.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+  const localNewer = new Date(aUpdated).getTime() >= new Date(bUpdated).getTime();
+  const pick = aTime >= bTime ? a : b;
+  const fallback = localNewer ? a : b;
+  return normalizeInvestorProfile(pick ?? fallback);
+}
+
 function mergePreferences(
   a: UserProfile["preferences"],
   b: UserProfile["preferences"],
@@ -84,6 +126,30 @@ export function mergeProfiles(local: UserProfile, remote: UserProfile): UserProf
     predictions: mergePredictions(local.predictions, remote.predictions),
     watchlist: mergeWatchlist(local.watchlist ?? [], remote.watchlist ?? []),
     savedScreens: mergeSavedScreens(local.savedScreens ?? [], remote.savedScreens ?? []),
+    investorProfile: mergeInvestorProfile(
+      local.investorProfile,
+      remote.investorProfile,
+      local.updatedAt,
+      remote.updatedAt,
+    ),
+    mockPortfolio: mergeMockPortfolio(
+      local.mockPortfolio,
+      remote.mockPortfolio,
+      local.updatedAt,
+      remote.updatedAt,
+    ),
+    researchQueue: mergeResearchQueue(local.researchQueue ?? [], remote.researchQueue ?? []),
+    researchShortlist: mergeShortlist(local.researchShortlist ?? [], remote.researchShortlist ?? []),
+    lastDashboardVisit:
+      [local.lastDashboardVisit, remote.lastDashboardVisit]
+        .filter(Boolean)
+        .sort()
+        .reverse()[0],
+    queueRefreshedAt:
+      [local.queueRefreshedAt, remote.queueRefreshedAt]
+        .filter(Boolean)
+        .sort()
+        .reverse()[0],
     preferences: mergePreferences(
       local.preferences,
       remote.preferences,

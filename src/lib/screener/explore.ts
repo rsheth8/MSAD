@@ -1,4 +1,5 @@
 import { allCatalogTickers } from "@/lib/catalog";
+import { runPool } from "@/lib/async";
 import { fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
 import type { FmpKeyMetricsTtm, FmpRatiosTtm } from "@/lib/fmp/types";
 import { getMockScreenerResults } from "@/lib/screener/mock";
@@ -28,6 +29,7 @@ interface FmpScreenerRow {
 const CANDIDATE_LIMIT = 250;
 /** Max symbols we fetch ratios for — caps per-query FMP call volume (2 calls each). */
 const ENRICH_CAP = 40;
+const ENRICH_CONCURRENCY = 3;
 /** Rows returned to the client. */
 const RESULT_LIMIT = 60;
 
@@ -213,7 +215,7 @@ export async function runExplore(req: ExploreRequest): Promise<ExploreResult> {
     truncated = ordered.length > ENRICH_CAP;
     const slice = ordered.slice(0, ENRICH_CAP);
     enriched = slice.length;
-    const withRatios = await Promise.all(slice.map(enrichRow));
+    const withRatios = await runPool(slice, enrichRow, ENRICH_CONCURRENCY);
     candidates = withRatios.filter((r) => passesEnrichedFilters(r, f));
   }
 

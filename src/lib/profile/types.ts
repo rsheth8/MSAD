@@ -5,6 +5,12 @@
  * another read-only quote screen.
  */
 
+import type {
+  InvestorProfile,
+  MockHolding,
+  ResearchQueueItem,
+} from "@/lib/discovery/types";
+
 export type Conviction = 1 | 2 | 3 | 4 | 5;
 export type JournalOutcome = "right" | "wrong" | "mixed" | "too-early";
 
@@ -70,11 +76,23 @@ export interface UserProfile {
     filters: Record<string, unknown>;
   }>;
   preferences?: UserPreferences;
+  /** Personalized discovery criteria — not buy/sell advice. */
+  investorProfile?: InvestorProfile;
+  /** Practice portfolio for gap-filling and impact previews. */
+  mockPortfolio?: MockHolding[];
+  /** Passive research queue — names worth a closer look for this user. */
+  researchQueue?: ResearchQueueItem[];
+  /** Shortlist for side-by-side compare. */
+  researchShortlist?: string[];
+  /** Last time the user opened their dashboard (passive digest). */
+  lastDashboardVisit?: string;
+  /** Last time the research queue was refreshed. */
+  queueRefreshedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export const PROFILE_VERSION = 2;
+export const PROFILE_VERSION = 3;
 
 export function emptyProfile(): UserProfile {
   const now = new Date().toISOString();
@@ -85,7 +103,12 @@ export function emptyProfile(): UserProfile {
     watchlist: [],
     savedScreens: [],
     preferences: {},
+    mockPortfolio: [],
+    researchQueue: [],
+    researchShortlist: [],
     createdAt: now,
     updatedAt: now,
   };
 }
+
+export type { InvestorProfile, MockHolding, ResearchQueueItem };

@@ -10,26 +10,35 @@ let catalogCache: {
 } | null = null;
 
 async function fetchQuotes(symbols: string[]) {
-  const results = await Promise.allSettled(
-    symbols.map(async (symbol) => {
-      const rows = await fmpFetch<FmpQuote[]>("/quote", { symbol });
-      const q = rows[0];
-      if (!q?.price) return null;
-      return {
-        symbol,
+  if (!symbols.length) return {};
+
+  const data: Record<string, { price: number; changePercentage: number }> = {};
+  try {
+    const rows = await fmpFetch<FmpQuote[]>("/batch-quote", {
+      symbols: symbols.join(","),
+    });
+    for (const q of rows ?? []) {
+      const symbol = q.symbol?.toUpperCase();
+      if (!symbol || q.price == null) continue;
+      data[symbol] = {
         price: q.price,
         changePercentage: q.changePercentage ?? 0,
       };
-    }),
-  );
-
-  const data: Record<string, { price: number; changePercentage: number }> = {};
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value) {
-      data[r.value.symbol] = {
-        price: r.value.price,
-        changePercentage: r.value.changePercentage,
-      };
+    }
+  } catch {
+    // Fallback for plans without batch-quote — one call per symbol, still throttled globally.
+    for (const symbol of symbols) {
+      try {
+        const rows = await fmpFetch<FmpQuote[]>("/quote", { symbol });
+        const q = rows[0];
+        if (!q?.price) continue;
+        data[symbol] = {
+          price: q.price,
+          changePercentage: q.changePercentage ?? 0,
+        };
+      } catch {
+        /* skip */
+      }
     }
   }
   return data;

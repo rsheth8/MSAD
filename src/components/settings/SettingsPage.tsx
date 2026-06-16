@@ -14,6 +14,8 @@ import {
   getLearningPathEnabled,
   setLearningPathEnabled,
 } from "@/lib/settings";
+import { InvestorProfileForm } from "@/components/discovery/InvestorProfileForm";
+import { MockPortfolioEditor } from "@/components/discovery/MockPortfolioEditor";
 import { syncPrefsToCloud } from "@/lib/profile/store";
 
 interface BrokerageStatus {
@@ -389,6 +391,27 @@ export function SettingsPage() {
                 />
               </button>
             </label>
+          </GlassCard>
+
+          <GlassCard className="p-4 sm:p-5">
+            <h2 className="font-display text-sm font-semibold text-foreground">Your investor criteria</h2>
+            <p className="mt-1 text-xs text-muted">
+              Powers your passive research queue on the dashboard — fit scores, not buy advice.
+            </p>
+            <div className="mt-4">
+              <InvestorProfileForm initial={profile.investorProfile} />
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-4 sm:p-5">
+            <h2 className="font-display text-sm font-semibold text-foreground">Mock portfolio</h2>
+            <p className="mt-1 text-xs text-muted">
+              Optional practice holdings for gap-filling and &quot;before you act&quot; previews. Real
+              brokerage import works too — and gives better results.
+            </p>
+            <div className="mt-4">
+              <MockPortfolioEditor initial={profile.mockPortfolio} />
+            </div>
           </GlassCard>
 
           {brokerStatus?.configured && (

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/format.test.ts src/lib/ticker.test.ts src/lib/validators.test.ts src/lib/news/analysis.test.ts src/lib/search.test.ts src/lib/ai/depth.test.ts src/lib/profile/calibration.test.ts src/lib/profile/merge.test.ts src/lib/auth/session.test.ts src/lib/auth/config.test.ts src/lib/backtest/engine.test.ts src/lib/replay/score.test.ts src/lib/risk/engine.test.ts src/lib/brokerage/mode.test.ts src/lib/brokerage/holdings.test.ts",
+    "test": "node --import tsx --test src/lib/format.test.ts src/lib/ticker.test.ts src/lib/validators.test.ts src/lib/news/analysis.test.ts src/lib/search.test.ts src/lib/ai/depth.test.ts src/lib/profile/calibration.test.ts src/lib/profile/merge.test.ts src/lib/auth/session.test.ts src/lib/auth/config.test.ts src/lib/backtest/engine.test.ts src/lib/replay/score.test.ts src/lib/risk/engine.test.ts src/lib/brokerage/mode.test.ts src/lib/brokerage/holdings.test.ts src/lib/discovery/match.test.ts src/lib/discovery/parse-criteria.test.ts src/lib/discovery/gap.test.ts src/lib/fmp/usage.test.ts",
     "test:e2e": "playwright test",
     "smoke": "node scripts/smoke-test.mjs"
   },
