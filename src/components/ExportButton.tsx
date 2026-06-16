@@ -28,7 +28,7 @@ export function ExportButton({
         backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--background").trim() || "#f4f5f7",
       });
       const link = document.createElement("a");
-      link.download = `amsad-${ticker.toLowerCase()}-report.png`;
+      link.download = `msad-${ticker.toLowerCase()}-report.png`;
       link.href = dataUrl;
       link.click();
     } catch {

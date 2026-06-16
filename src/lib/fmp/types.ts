@@ -26,14 +26,25 @@ export interface FmpPeer {
 export interface FmpRatiosTtm {
   symbol: string;
   operatingProfitMarginTTM?: number;
+  netProfitMarginTTM?: number;
+  grossProfitMarginTTM?: number;
   priceToEarningsRatioTTM?: number;
+  priceToBookRatioTTM?: number;
+  priceToSalesRatioTTM?: number;
+  priceToFreeCashFlowRatioTTM?: number;
+  priceToEarningsGrowthRatioTTM?: number;
+  debtToEquityRatioTTM?: number;
+  currentRatioTTM?: number;
   dividendYieldTTM?: number;
 }
 
 export interface FmpKeyMetricsTtm {
   symbol: string;
   returnOnEquityTTM?: number;
+  returnOnInvestedCapitalTTM?: number;
   evToEBITDATTM?: number;
+  freeCashFlowYieldTTM?: number;
+  netDebtToEBITDATTM?: number;
 }
 
 export interface FmpBalanceSheet {

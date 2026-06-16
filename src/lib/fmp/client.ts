@@ -1,4 +1,7 @@
 const FMP_BASE = "https://financialmodelingprep.com/stable";
+const FMP_V4_BASE = "https://financialmodelingprep.com/api/v4";
+
+export { FMP_BASE, FMP_V4_BASE };
 
 export class FmpError extends Error {
   constructor(
@@ -16,12 +19,13 @@ function getApiKey(): string {
   return key;
 }
 
-/** Typed fetch against FMP /stable/ endpoints. Key stays server-side only. */
+/** Typed fetch against FMP endpoints. Key stays server-side only. */
 export async function fmpFetch<T>(
   path: string,
   params: Record<string, string | number | undefined> = {},
+  base: string = FMP_BASE,
 ): Promise<T> {
-  const url = new URL(`${FMP_BASE}${path.startsWith("/") ? path : `/${path}`}`);
+  const url = new URL(`${base}${path.startsWith("/") ? path : `/${path}`}`);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined) url.searchParams.set(key, String(value));
   }

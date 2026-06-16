@@ -1,12 +1,14 @@
 {
-  "name": "stock_project_for_aastik",
+  "name": "msad",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test src/lib/format.test.ts src/lib/ticker.test.ts src/lib/validators.test.ts src/lib/news/analysis.test.ts src/lib/search.test.ts",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -28,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }

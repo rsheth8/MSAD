@@ -34,6 +34,8 @@ export interface SeriesPoint {
 
 /** Trailing price changes, as percentages. */
 export interface PriceChanges {
+  /** today's session change (shortest span — drives backdrop color) */
+  day: number;
   week: number;
   month: number;
   year: number;

@@ -5,6 +5,7 @@ import { toPng } from "html-to-image";
 import { overallGrade } from "@/lib/analysis";
 import type { ReportCard } from "@/lib/types";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
+import { BRAND, MSAD_DOM } from "@/lib/brand";
 
 export function ShareButton() {
   const [copied, setCopied] = useState(false);
@@ -31,13 +32,13 @@ export function StoryExportButton({ data }: { data: ReportCard }) {
   const grade = overallGrade(data);
 
   async function exportStory() {
-    const node = document.getElementById("amsad-story-export");
+    const node = document.getElementById(MSAD_DOM.storyExport);
     if (!node) return;
     setBusy(true);
     try {
       const url = await toPng(node, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
       const link = document.createElement("a");
-      link.download = `amsad-${data.ticker.toLowerCase()}-story.png`;
+      link.download = `msad-${data.ticker.toLowerCase()}-story.png`;
       link.href = url;
       link.click();
     } finally {
@@ -58,12 +59,12 @@ export function StoryExportButton({ data }: { data: ReportCard }) {
 
       {/* Off-screen one-pager layout for capture */}
       <div
-        id="amsad-story-export"
+        id={MSAD_DOM.storyExport}
         className="pointer-events-none fixed left-[-9999px] top-0 w-[640px] rounded-2xl border border-border bg-white p-8"
         aria-hidden
       >
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-green-600 px-2 py-0.5 text-xs font-bold text-white">AMSAD</span>
+          <span className="rounded-md bg-green-600 px-2 py-0.5 text-xs font-bold text-white">{BRAND.id}</span>
           <span className="font-display text-sm font-semibold text-gray-900">Stock snapshot</span>
         </div>
         <h2 className="mt-4 font-display text-3xl font-bold text-gray-900">{data.name}</h2>
@@ -98,7 +99,7 @@ export function StoryExportButton({ data }: { data: ReportCard }) {
           ))}
         </ul>
         <p className="mt-6 text-center text-[0.65rem] text-gray-400">
-          Educational only — not financial advice · amsad.app
+          Educational only — not financial advice · {BRAND.authors}
         </p>
       </div>
     </>

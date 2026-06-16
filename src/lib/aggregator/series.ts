@@ -79,6 +79,7 @@ export function buildSeriesAndChanges(
   return {
     series,
     changes: {
+      day: 0,
       week: weekBar ? pctChange(weekBar.close, price) : 0,
       month: monthBar ? pctChange(monthBar.close, price) : 0,
       year: yearBar ? pctChange(yearBar.close, price) : 0,

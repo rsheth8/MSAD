@@ -1,39 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { allCatalogTickers, CATALOG_ROWS } from "@/lib/catalog";
+import { formatSignedPercent } from "@/lib/format";
 import { AccentPicker } from "./AccentPicker";
 import { AmbientOrbs } from "./AmbientOrbs";
 import { SectorHeatmap } from "./SectorHeatmap";
+import { MarketPulse } from "./MarketPulse";
 import { SoundToggle, ThemeToggle } from "./OnboardingModal";
 import { StockCarousel } from "./StockCarousel";
 import { WatchlistRow } from "./WatchlistRow";
 import { TickerSearch } from "./TickerSearch";
 import type { TileQuote } from "./StockTile";
+import { BRAND, MSAD_EVENTS, MSAD_STORAGE } from "@/lib/brand";
 
-const SceneBackground = dynamic(() => import("./SceneBackground"), { ssr: false });
+const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
 
-const DEFAULT_ACCENT = "#16a34a";
+const MARKET_PULSE_EVENT = MSAD_EVENTS.marketPulse;
 
 export function HomeDashboard() {
   const router = useRouter();
-  const [accent, setAccent] = useState(DEFAULT_ACCENT);
+  const [accent, setAccent] = useState<string>(BRAND.accent);
   const [quotes, setQuotes] = useState<Record<string, TileQuote>>({});
   const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
   const [pulseTickers, setPulseTickers] = useState<Record<string, boolean>>({});
   const prevPrices = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    const saved = localStorage.getItem("amsad-accent");
+    const saved = localStorage.getItem(MSAD_STORAGE.accent);
     if (saved) setAccent(saved);
   }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", accent);
-    localStorage.setItem("amsad-accent", accent);
+    localStorage.setItem(MSAD_STORAGE.accent, accent);
   }, [accent]);
 
   useEffect(() => {
@@ -49,7 +52,10 @@ export function HomeDashboard() {
               if (old != null && nw != null && old !== nw) pulse[t] = true;
               if (nw != null) prevPrices.current[t] = nw;
             }
-            if (Object.keys(pulse).length) setPulseTickers((p) => ({ ...p, ...pulse }));
+            if (Object.keys(pulse).length) {
+              setPulseTickers((p) => ({ ...p, ...pulse }));
+              window.dispatchEvent(new CustomEvent(MARKET_PULSE_EVENT));
+            }
             return data;
           });
         })
@@ -69,57 +75,98 @@ export function HomeDashboard() {
 
   const featured = CATALOG_ROWS[0];
 
+  const avgDayChange = useMemo(() => {
+    const vals = Object.values(quotes)
+      .map((q) => q.changePercentage)
+      .filter((v) => Number.isFinite(v));
+    if (!vals.length) return undefined;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [quotes]);
+
+  const catalogAvg = avgDayChange != null && (
+    <div className="text-right">
+      <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+        Catalog avg
+      </div>
+      <div
+        className={`font-mono text-sm font-semibold tabular-nums ${
+          avgDayChange >= 0 ? "text-up" : "text-down"
+        }`}
+      >
+        {formatSignedPercent(avgDayChange)}
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <SceneBackground accent={accent} />
+      <ContourScene accent={accent} colorChange={avgDayChange} />
       <AmbientOrbs />
-      <div className="texture-grid pointer-events-none fixed inset-0 -z-[5]" aria-hidden />
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
-        <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:mb-10 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-2">
+        <header className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span
-                className="sheen rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-white"
+                className="sheen rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-foreground"
                 style={{ background: "var(--accent)" }}
               >
-                AMSAD
+                {BRAND.id}
               </span>
               <h1 className="font-display text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-                Stock &amp; ETF Dashboard
+                {BRAND.name}
               </h1>
+              <span className="hidden text-xs text-muted-2 sm:inline">·</span>
+              <span className="hidden text-xs text-muted-2 sm:inline">{BRAND.authors}</span>
             </div>
-            <p className="mt-1 max-w-md text-xs text-muted sm:text-sm">
-              Browse stocks and ETFs Netflix-style — click any tile for a full beginner-friendly
-              report card.
-            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/discover" className="btn-primary text-xs">
+                Discover stocks
+              </Link>
+              <Link href="/explore" className="btn-ghost interactive text-xs">
+                Explore
+              </Link>
+              <Link href="/news" className="btn-ghost interactive text-xs">
+                Market news
+              </Link>
+              <ThemeToggle />
+              <SoundToggle />
+              <AccentPicker value={accent} onChange={setAccent} />
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link href="/discover" className="btn-primary text-xs">
-              Discover stocks
-            </Link>
-            <ThemeToggle />
-            <SoundToggle />
-            <AccentPicker value={accent} onChange={setAccent} />
-            <TickerSearch onSubmit={(t) => router.push(`/stock/${t}`)} />
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <p className="min-w-0 text-xs text-muted sm:text-sm lg:max-w-3xl">{BRAND.tagline}</p>
+            <div className="shrink-0 self-start sm:self-center">
+              <TickerSearch compact onSubmit={(t) => router.push(`/stock/${t}`)} />
+            </div>
           </div>
         </header>
 
-        <div className="hero-hint surface mx-auto mb-10 hidden max-w-xl rounded-2xl px-6 py-4 text-center lg:block">
+        <div className="hero-hint surface mx-auto mb-10 max-w-2xl rounded-2xl px-6 py-4 text-center lg:mb-12">
           <p className="text-sm leading-relaxed text-muted">
-            Pick a tile below to open a full report — or use{" "}
+            The backdrop shifts with today&apos;s market mood. Pick a tile for a full report, use{" "}
             <Link href="/discover" className="font-medium text-accent hover:underline">
               Discover
             </Link>{" "}
-            to filter by market cap, P/E, and more.
+            to screen by fundamentals,{" "}
+            <Link href="/explore" className="font-medium text-accent hover:underline">
+              Explore
+            </Link>{" "}
+            to filter the universe, or{" "}
+            <Link href="/news" className="font-medium text-accent hover:underline">
+              Market news
+            </Link>{" "}
+            for headlines. Educational only — not financial advice.
           </p>
         </div>
 
-        <SectorHeatmap quotes={quotes} />
-        <WatchlistRow quotes={quotes} />
+        <SectorHeatmap quotes={quotes} trailing={catalogAvg} className="mb-10" />
+        <MarketPulse className="mb-10" />
+        <WatchlistRow quotes={quotes} className="mb-12" />
 
-        <div className="mb-14">
+        <div className="mb-12">
           <StockCarousel
             row={featured}
             quotes={quotes}
@@ -129,7 +176,7 @@ export function HomeDashboard() {
           />
         </div>
 
-        <div className="space-y-12 pb-10">
+        <div className="space-y-16 pb-8">
           {CATALOG_ROWS.slice(1).map((row) => (
             <StockCarousel
               key={row.id}
@@ -140,6 +187,22 @@ export function HomeDashboard() {
             />
           ))}
         </div>
+
+        <footer className="mt-4 border-t border-border/60 pt-6 text-center text-[0.65rem] leading-relaxed text-muted-2 sm:text-xs">
+          Educational only — not financial advice. Use{" "}
+          <Link href="/discover" className="text-accent hover:underline">
+            Discover
+          </Link>
+          ,{" "}
+          <Link href="/explore" className="text-accent hover:underline">
+            Explore
+          </Link>
+          , or{" "}
+          <Link href="/news" className="text-accent hover:underline">
+            Market news
+          </Link>{" "}
+          to dig deeper.
+        </footer>
       </main>
     </>
   );

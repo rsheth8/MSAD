@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,21 +22,20 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AMSAD — Stock Analysis Dashboard",
-    template: "%s · AMSAD",
+    default: `${BRAND.id} — ${BRAND.name}`,
+    template: `%s · ${BRAND.id}`,
   },
-  description:
-    "A clean, beginner-friendly dashboard that explains any stock's price, fundamentals, and risk — and how each metric compares to its industry.",
+  description: BRAND.description,
   openGraph: {
     type: "website",
-    siteName: "AMSAD",
-    title: "AMSAD — Stock Analysis Dashboard",
-    description: "Learn stocks with grades, charts, calculators, and an options lab.",
+    siteName: BRAND.id,
+    title: `${BRAND.id} — ${BRAND.name}`,
+    description: BRAND.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "AMSAD — Stock Analysis Dashboard",
-    description: "Learn stocks with grades, charts, calculators, and an options lab.",
+    title: `${BRAND.id} — ${BRAND.name}`,
+    description: BRAND.description,
   },
 };
 

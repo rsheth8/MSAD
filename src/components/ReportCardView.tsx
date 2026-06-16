@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MSAD_EVENTS } from "@/lib/brand";
 import { LayoutGroup, motion } from "framer-motion";
 import type { Metric, ReportCard } from "@/lib/types";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
@@ -11,6 +12,7 @@ import { GlassCard } from "./GlassCard";
 import { GradePanel } from "./GradePanel";
 import { MetricCard } from "./MetricCard";
 import { ChartPanel } from "./ChartPanel";
+import { NewsSection } from "./NewsSection";
 
 function ChangeStat({ label, pct }: { label: string; pct: number }) {
   const up = pct >= 0;
@@ -89,8 +91,8 @@ export function ReportCardView({
       const key = (e as CustomEvent<string>).detail;
       if (key) setExpandedMetric((c) => (c === key ? null : key));
     }
-    window.addEventListener("amsad-expand-metric", onExpand);
-    return () => window.removeEventListener("amsad-expand-metric", onExpand);
+    window.addEventListener(MSAD_EVENTS.expandMetric, onExpand);
+    return () => window.removeEventListener(MSAD_EVENTS.expandMetric, onExpand);
   }, []);
 
   return (
@@ -136,6 +138,11 @@ export function ReportCardView({
         {/* Overall grade — the beginner's 5-second gist */}
         <motion.div variants={fadeUp} custom={2} className="mt-6" id="section-grade">
           <GradePanel data={data} learnMode={learnMode} />
+        </motion.div>
+
+        {/* News, analyst sentiment, and social context */}
+        <motion.div variants={fadeUp} custom={2.5} className="mt-4">
+          <NewsSection ticker={data.ticker} data={data} learnMode={learnMode} />
         </motion.div>
 
         {/* Interactive chart */}

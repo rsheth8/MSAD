@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ----------------------------------------------------------------------------
-   AMSAD — minimalist professional light theme.
+   MSAD — minimalist professional light theme.
    Neutral palette (white / grey / black) + a single user-customizable accent.
    The accent is overridden at runtime on <html> via JS (default: green).
 ---------------------------------------------------------------------------- */
@@ -17,7 +17,7 @@
   --border: #e6e8ec;
 
   /* user-customizable accent (set on <html> at runtime) */
-  --accent: #16a34a;
+  --accent: #45ded6;
 
   /* functional sentiment — fixed stoplight convention, independent of accent */
   --up: #15803d;
@@ -31,6 +31,13 @@
   --shadow-card-hover:
     0 1px 2px rgba(17, 19, 23, 0.06),
     0 20px 44px -22px color-mix(in srgb, var(--accent) 60%, rgba(17, 19, 23, 0.35));
+
+  /* frosted-glass surface tokens — cards float over the iridescent backdrop */
+  --glass-bg: rgba(255, 255, 255, 0.66);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.75);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
 }
 
 /* Dark theme */
@@ -48,6 +55,12 @@ html[data-theme="dark"] {
   --shadow-card-hover:
     0 1px 2px rgba(0, 0, 0, 0.4),
     0 20px 44px -22px color-mix(in srgb, var(--accent) 45%, rgba(0, 0, 0, 0.55));
+
+  --glass-bg: rgba(22, 25, 31, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.10);
+  --glass-blur: 22px;
+  --glass-saturate: 160%;
 }
 
 @theme inline {
@@ -78,22 +91,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* White card surface with a soft accent-tinted shadow */
+/* Frosted-glass card surface floating over the iridescent backdrop */
 .surface {
-  background: var(--card);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+/* hairline top highlight to sell the glass edge */
+.surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding-top: 1px;
+  background: linear-gradient(180deg, var(--glass-highlight), transparent 42%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.7;
 }
 
-/* Subtle technical dot grid, faded toward the edges */
-.texture-grid {
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
-    transparent 1.6px
-  );
-  background-size: 22px 22px;
-  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
-  mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 78%);
+/* Opt-out for elements that need a solid, fully opaque surface */
+.surface-solid {
+  background: var(--card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.surface-solid::before {
+  display: none;
 }
 
 /* Refined accent focus ring on any interactive element */
@@ -174,7 +205,7 @@ body {
   transform: translateY(-1px);
 }
 .btn-pill-active {
-  color: #fff;
+  color: var(--foreground);
   background: var(--accent);
   box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 55%, transparent);
 }
@@ -209,7 +240,7 @@ body {
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--foreground);
   background: var(--accent);
   transition:
     transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
@@ -321,37 +352,30 @@ body {
   }
 }
 
-/* Netflix-style auto-scrolling carousel rows */
-.carousel-viewport {
-  overflow: hidden;
+/* Horizontal lane: native scrollbar tinted with the accent, sitting below content */
+.scroll-lane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.scroll-lane::-webkit-scrollbar {
+  height: 8px;
+}
+.scroll-lane::-webkit-scrollbar-track {
+  margin-inline: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+}
+.scroll-lane::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.scroll-lane::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
-.carousel-track {
-  width: max-content;
-  animation: carousel-scroll var(--carousel-duration, 90s) linear infinite;
-  will-change: transform;
-}
-
-.carousel-row:hover .carousel-track {
-  animation-play-state: paused;
-}
-
-@keyframes carousel-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
+/* Market pulse ticker auto-scrolls via HorizontalScrollLane.tsx */
 
 @media (prefers-reduced-motion: reduce) {
-  .carousel-track {
-    animation: none;
-    flex-wrap: wrap;
-    width: 100%;
-  }
-
   .interactive,
   .btn-section,
   .btn-pill,

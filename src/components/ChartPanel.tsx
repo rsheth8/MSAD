@@ -18,7 +18,9 @@ import { Explainer } from "./Explainer";
 import { GlassCard } from "./GlassCard";
 import { ScatterChartView } from "./ScatterChartView";
 
-const PREFS_KEY = "amsad-chart-prefs";
+import { MSAD_STORAGE } from "@/lib/brand";
+
+const PREFS_KEY = MSAD_STORAGE.chartPrefs;
 
 interface ChartPrefs {
   range: ChartRange;
@@ -103,6 +105,7 @@ export function ChartPanel({
   const [useDefault, setUseDefault] = useState(saved.useDefault ?? !saved.seriesB);
   const [payload, setPayload] = useState<FullChartPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const fetchChart = useCallback(() => {
@@ -122,14 +125,24 @@ export function ChartPanel({
     }
 
     fetch(`/api/chart/${encodeURIComponent(data.ticker)}?${params}`)
-      .then((r) => r.json())
-      .then((p: FullChartPayload) => {
+      .then(async (r) => {
+        const p = await r.json().catch(() => null);
+        if (!r.ok || !p || !p.chart) {
+          throw new Error(p?.error ?? `Chart request failed (${r.status})`);
+        }
+        return p as FullChartPayload;
+      })
+      .then((p) => {
         setPayload(p);
+        setError(null);
         if (useDefault && p.meta?.defaultPreset) {
           setSeriesB(p.meta.defaultPreset.seriesB);
         }
       })
-      .catch(() => setPayload(null))
+      .catch((err: Error) => {
+        setPayload(null);
+        setError(err.message || "Failed to load chart");
+      })
       .finally(() => setLoading(false));
   }, [data.ticker, range, mode, seriesA, seriesB, scatterX, scatterY, useDefault]);
 
@@ -158,7 +171,7 @@ export function ChartPanel({
     try {
       const url = await toPng(exportRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
       const link = document.createElement("a");
-      link.download = `amsad-${data.ticker.toLowerCase()}-chart.png`;
+      link.download = `msad-${data.ticker.toLowerCase()}-chart.png`;
       link.href = url;
       link.click();
     } finally {
@@ -166,9 +179,9 @@ export function ChartPanel({
     }
   }
 
-  const compare = payload?.chart.mode === "compare" ? (payload.chart as CompareChartData) : null;
-  const compareOptions = payload?.meta.compareOptions ?? [];
-  const scatterMetrics = payload?.meta.scatterMetrics ?? [];
+  const compare = payload?.chart?.mode === "compare" ? (payload.chart as CompareChartData) : null;
+  const compareOptions = payload?.meta?.compareOptions ?? [];
+  const scatterMetrics = payload?.meta?.scatterMetrics ?? [];
 
   return (
     <div>
@@ -255,7 +268,7 @@ export function ChartPanel({
               </select>
               <span className="text-muted">vs</span>
               <select
-                value={useDefault ? (payload?.meta.defaultPreset.seriesB ?? seriesB) : seriesB}
+                value={useDefault ? (payload?.meta?.defaultPreset?.seriesB ?? seriesB) : seriesB}
                 onChange={(e) => {
                   setSeriesB(e.target.value);
                   setUseDefault(false);
@@ -336,7 +349,7 @@ export function ChartPanel({
           <div className="mb-1 text-center text-[0.65rem] uppercase tracking-wider text-muted">
             {mode === "compare" && compare
               ? `${compare.seriesA.label} vs ${compare.seriesB.label} · ${range}`
-              : payload?.chart.mode === "scatter"
+              : payload?.chart?.mode === "scatter"
                 ? `${payload.chart.seriesX.label} vs ${payload.chart.seriesY.label} · peers`
                 : "Loading…"}
           </div>
@@ -344,10 +357,23 @@ export function ChartPanel({
             {loading && (
               <div className="flex h-full items-center justify-center text-xs text-muted">Loading chart…</div>
             )}
-            {!loading && compare && mode === "compare" && (
+            {!loading && error && (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                <p className="text-xs font-medium text-muted">Chart data is unavailable right now.</p>
+                <p className="max-w-xs text-[0.65rem] text-muted/80">{error}</p>
+                <button
+                  type="button"
+                  onClick={fetchChart}
+                  className="btn-ghost interactive px-2.5 py-1 text-[0.65rem]"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {!loading && !error && compare && mode === "compare" && (
               <CompareChart data={compare} showVolume={showVolume} />
             )}
-            {!loading && payload?.chart.mode === "scatter" && mode === "scatter" && (
+            {!loading && !error && payload?.chart?.mode === "scatter" && mode === "scatter" && (
               <ScatterChartView data={payload.chart} />
             )}
           </div>

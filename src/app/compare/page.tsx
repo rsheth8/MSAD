@@ -11,8 +11,12 @@ import type { CompareChartData } from "@/lib/chart/types";
 import { CompareChart } from "@/components/CompareChart";
 import { GlassCard } from "@/components/GlassCard";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
+import { BRAND } from "@/lib/brand";
+import { CompareSentiment } from "@/components/CompareSentiment";
+import { fetchJson } from "@/lib/fetch-client";
+import { isReportCard } from "@/lib/validators";
 
-const SceneBackground = dynamic(() => import("@/components/SceneBackground"), { ssr: false });
+const ContourScene = dynamic(() => import("@/components/ContourScene"), { ssr: false });
 
 const SENTIMENT_COLOR = {
   good: "var(--up)",
@@ -20,36 +24,72 @@ const SENTIMENT_COLOR = {
   bad: "var(--down)",
 } as const;
 
+function tickerFromUrl(param: "a" | "b", fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = new URLSearchParams(window.location.search).get(param);
+  return (value ?? fallback).toUpperCase();
+}
+
 export default function CompareView() {
-  const [a, setA] = useState("AAPL");
-  const [b, setB] = useState("MSFT");
+  const [a, setA] = useState(() => tickerFromUrl("a", "AAPL"));
+  const [b, setB] = useState(() => tickerFromUrl("b", "MSFT"));
   const [cardA, setCardA] = useState<ReportCard | null>(null);
   const [cardB, setCardB] = useState<ReportCard | null>(null);
   const [chart, setChart] = useState<CompareChartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const pa = p.get("a");
-    const pb = p.get("b");
-    if (pa) setA(pa.toUpperCase());
-    if (pb) setB(pb.toUpperCase());
-  }, []);
-
-  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    Promise.all([
-      fetch(`/api/report/${a}`).then((r) => r.json()),
-      fetch(`/api/report/${b}`).then((r) => r.json()),
-      fetch(`/api/chart/${a}?range=1Y&mode=compare&default=0&a=stock&b=${b}`).then((r) => r.json()),
-    ])
-      .then(([ra, rb, chartPayload]) => {
-        setCardA(ra);
-        setCardB(rb);
-        if (chartPayload?.chart?.mode === "compare") setChart(chartPayload.chart);
-        else setChart(null);
-      })
-      .finally(() => setLoading(false));
+    setError(null);
+    setCardA(null);
+    setCardB(null);
+    setChart(null);
+
+    async function loadReport(ticker: string): Promise<ReportCard> {
+      return fetchJson(`/api/report/${encodeURIComponent(ticker)}`, isReportCard);
+    }
+
+    async function load() {
+      const [resultA, resultB] = await Promise.allSettled([
+        loadReport(a),
+        loadReport(b),
+      ]);
+
+      if (cancelled) return;
+
+      const errors: string[] = [];
+      if (resultA.status === "fulfilled") setCardA(resultA.value);
+      else errors.push(`${a}: ${resultA.reason instanceof Error ? resultA.reason.message : "Failed to load"}`);
+
+      if (resultB.status === "fulfilled") setCardB(resultB.value);
+      else errors.push(`${b}: ${resultB.reason instanceof Error ? resultB.reason.message : "Failed to load"}`);
+
+      if (errors.length) {
+        setError(errors.join(" · "));
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const chartPayload = await fetchJson<{ chart?: CompareChartData }>(
+          `/api/chart/${encodeURIComponent(a)}?range=1Y&mode=compare&default=0&a=stock&b=${encodeURIComponent(b)}`,
+        );
+        if (!cancelled) {
+          if (chartPayload?.chart?.mode === "compare") setChart(chartPayload.chart);
+        }
+      } catch {
+        if (!cancelled) setChart(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [a, b]);
 
   function runCompare() {
@@ -66,7 +106,7 @@ export default function CompareView() {
 
   return (
     <>
-      <SceneBackground accent="#16a34a" />
+      <ContourScene accent={BRAND.accent} />
       <AmbientOrbs />
       <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <Link href="/" className="text-xs text-muted hover:text-foreground">
@@ -98,13 +138,21 @@ export default function CompareView() {
 
         {loading && <div className="mt-8 animate-pulse text-sm text-muted">Loading comparison…</div>}
 
-        {!loading && verdict && cardA && cardB && gradeA && gradeB && (
+        {!loading && error && (
+          <div className="mt-8 rounded-xl border border-down/30 bg-down/5 px-4 py-3 text-sm text-down">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && verdict && cardA && cardB && gradeA && gradeB && (
           <div className="mt-8 space-y-6">
             <GlassCard className="p-5 sm:p-6">
               <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-accent">Verdict</div>
               <h2 className="mt-1 font-display text-xl font-bold">{verdict.headline}</h2>
               <p className="mt-2 text-sm text-muted">{verdict.detail}</p>
             </GlassCard>
+
+            <CompareSentiment tickerA={a} tickerB={b} />
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[cardA, cardB].map((card, i) => {

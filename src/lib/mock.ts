@@ -111,6 +111,8 @@ export function getMockReportCard(rawTicker = "AAPL"): ReportCard {
   const yearChange = ((last - series[0].stock) / series[0].stock) * 100;
   const monthChange = ((last - series[series.length - 2].stock) / series[series.length - 2].stock) * 100;
   const weekChange = (rand() - 0.45) * 6;
+  const dayChange = ((last - series[series.length - 1].stock) / series[series.length - 1].stock) * 100
+    || (rand() - 0.48) * 3;
   const beta = Math.round((0.6 + rand() * 1.3) * 100) / 100;
 
   return {
@@ -122,6 +124,7 @@ export function getMockReportCard(rawTicker = "AAPL"): ReportCard {
     price,
     beta,
     changes: {
+      day: Math.round(dayChange * 10) / 10,
       week: Math.round(weekChange * 10) / 10,
       month: Math.round(monthChange * 10) / 10,
       year: Math.round(yearChange * 10) / 10,

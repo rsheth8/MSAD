@@ -1,4 +1,6 @@
-const WATCHLIST_KEY = "amsad-watchlist";
+import { MSAD_EVENTS, MSAD_STORAGE } from "@/lib/brand";
+
+const WATCHLIST_KEY = MSAD_STORAGE.watchlist;
 
 export function getWatchlist(): string[] {
   try {
@@ -15,7 +17,7 @@ export function toggleWatchlist(ticker: string): string[] {
   const list = getWatchlist();
   const next = list.includes(t) ? list.filter((x) => x !== t) : [...list, t];
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
-  window.dispatchEvent(new Event("amsad-watchlist"));
+  window.dispatchEvent(new Event(MSAD_EVENTS.watchlist));
   return next;
 }
 
@@ -26,6 +28,6 @@ export function isWatchlisted(ticker: string): boolean {
 export function setWatchlist(tickers: string[]) {
   const next = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
-  window.dispatchEvent(new Event("amsad-watchlist"));
+  window.dispatchEvent(new Event(MSAD_EVENTS.watchlist));
   return next;
 }

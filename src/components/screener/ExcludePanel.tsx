@@ -41,20 +41,30 @@ export function ExcludePanel({
 
   return (
     <GlassCard className="mb-6 p-4">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between text-left text-sm font-semibold"
-      >
+      <div className="flex w-full items-center justify-between text-left text-sm font-semibold">
         <span className="flex items-center gap-2">
-          Exclude tickers
-          <span className="rounded-full bg-background px-2 py-0.5 text-[0.65rem] font-mono text-muted">
-            {exclusions.length} hidden
-          </span>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="interactive text-left"
+          >
+            Exclude tickers
+            <span className="ml-2 rounded-full bg-background px-2 py-0.5 text-[0.65rem] font-mono text-muted">
+              {exclusions.length} hidden
+            </span>
+          </button>
           <Explainer content={FILTER_EXPLAINERS.exclude} id="filter-exclude" />
         </span>
-        <span className="text-muted">{open ? "▲" : "▼"}</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="interactive text-muted"
+          aria-expanded={open}
+          aria-label={open ? "Collapse exclude panel" : "Expand exclude panel"}
+        >
+          {open ? "▲" : "▼"}
+        </button>
+      </div>
 
       {open && (
         <div className="mt-3 space-y-3 border-t border-border pt-3">

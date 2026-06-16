@@ -1,6 +1,12 @@
 "use client";
 
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { Line, LineChart } from "recharts";
+
+// Fixed pixel size (matches h-8 w-16). Rendering the chart at an explicit size
+// avoids ResponsiveContainer's first-paint measure, which logs a width(-1)/
+// height(-1) warning for every instance — and tiles render dozens of these.
+const WIDTH = 64;
+const HEIGHT = 32;
 
 export function MiniSparkline({
   data,
@@ -20,18 +26,16 @@ export function MiniSparkline({
 
   return (
     <div className={`h-8 w-16 opacity-80 ${className}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
-          <Line
-            type="monotone"
-            dataKey="v"
-            stroke={color}
-            strokeWidth={1.5}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart data={chartData} width={WIDTH} height={HEIGHT}>
+        <Line
+          type="monotone"
+          dataKey="v"
+          stroke={color}
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </LineChart>
     </div>
   );
 }

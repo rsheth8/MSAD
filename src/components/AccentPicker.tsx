@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const PRESETS: { name: string; hex: string }[] = [
-  { name: "Green", hex: "#16a34a" },
+  { name: "Tiffany", hex: "#45ded6" },
   { name: "Blue", hex: "#2563eb" },
   { name: "Indigo", hex: "#4f46e5" },
   { name: "Violet", hex: "#7c3aed" },
@@ -112,7 +112,7 @@ export function AccentPicker({
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && apply(text)}
-              placeholder="#16a34a"
+              placeholder="#45ded6"
               aria-label="Hex color code"
               spellCheck={false}
               className={`min-w-0 flex-1 rounded-lg border bg-background px-3 py-1.5 font-mono text-sm text-foreground focus:outline-none focus:ring-2 ${
@@ -129,7 +129,7 @@ export function AccentPicker({
             </button>
           </div>
           {invalid && (
-            <p className="mt-2 text-xs text-down">Enter a 6-digit hex code, e.g. #16a34a.</p>
+            <p className="mt-2 text-xs text-down">Enter a 6-digit hex code, e.g. #45ded6.</p>
           )}
         </div>
       )}

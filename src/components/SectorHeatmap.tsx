@@ -1,16 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { formatSignedPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/sectors";
 import type { TileQuote } from "./StockTile";
 
-export function SectorHeatmap({ quotes }: { quotes: Record<string, TileQuote> }) {
+export function SectorHeatmap({
+  quotes,
+  trailing,
+  className = "",
+}: {
+  quotes: Record<string, TileQuote>;
+  trailing?: ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="mb-10">
-      <div className="mb-3">
-        <h2 className="font-display text-lg font-bold tracking-tight">Sector pulse</h2>
-        <p className="text-xs text-muted">Today&apos;s move by sector ETF — a quick read on market mood</p>
+    <section className={className}>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-bold tracking-tight">Sector pulse</h2>
+          <p className="text-xs text-muted">
+            Today&apos;s move by sector ETF — a quick read on market mood
+          </p>
+        </div>
+        {trailing}
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {SECTOR_ETFS.map(({ ticker, label }) => {
@@ -22,11 +36,11 @@ export function SectorHeatmap({ quotes }: { quotes: Record<string, TileQuote> })
             <Link
               key={ticker}
               href={`/stock/${ticker}`}
-              className="surface-interactive rounded-xl px-3 py-2.5"
+              className="surface surface-interactive rounded-xl px-3 py-2.5"
               style={{
                 background: up
-                  ? `color-mix(in srgb, var(--up) ${8 + intensity * 14}%, var(--card))`
-                  : `color-mix(in srgb, var(--down) ${8 + intensity * 14}%, var(--card))`,
+                  ? `color-mix(in srgb, var(--up) ${12 + intensity * 20}%, var(--glass-bg))`
+                  : `color-mix(in srgb, var(--down) ${12 + intensity * 20}%, var(--glass-bg))`,
               }}
             >
               <div className="font-mono text-[0.65rem] font-bold text-muted">{ticker}</div>

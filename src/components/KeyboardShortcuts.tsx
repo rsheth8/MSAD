@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { MSAD_EVENTS } from "@/lib/brand";
 
 const METRIC_KEYS = ["roe", "pe", "evEbitda", "divYield", "opRevenue", "cashFlowChange", "assetLiability"];
 
@@ -15,20 +16,22 @@ export function KeyboardShortcuts() {
 
       if (e.key === "/" && !typing) {
         e.preventDefault();
-        const input = document.querySelector<HTMLInputElement>('input[placeholder*="Search"], input[aria-label*="Search"], input[type="text"]');
+        const input = document.querySelector<HTMLInputElement>(
+          'input[aria-label="Search stocks"], input[placeholder*="ticker"], input[placeholder*="Search"]',
+        );
         input?.focus();
       }
 
       if (e.key === "Escape") {
         (document.activeElement as HTMLElement)?.blur();
-        window.dispatchEvent(new CustomEvent("amsad-close-panels"));
+        window.dispatchEvent(new CustomEvent(MSAD_EVENTS.closePanels));
       }
 
       if (!typing && e.key >= "1" && e.key <= "7") {
         const idx = Number(e.key) - 1;
         const key = METRIC_KEYS[idx];
         if (key) {
-          window.dispatchEvent(new CustomEvent("amsad-expand-metric", { detail: key }));
+          window.dispatchEvent(new CustomEvent(MSAD_EVENTS.expandMetric, { detail: key }));
         }
       }
 

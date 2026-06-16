@@ -54,7 +54,10 @@ export async function getReportCard(rawTicker: string): Promise<ReportCard> {
     currency: profile.currency ?? "USD",
     price,
     beta,
-    changes,
+    changes: {
+      ...changes,
+      day: quote?.changePercentage ?? changes.week,
+    },
     series,
     metrics,
     options,

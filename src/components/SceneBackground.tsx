@@ -1,8 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { BRAND, MSAD_EVENTS } from "@/lib/brand";
+
+const BG_LIGHT = new THREE.Color("#f4f5f7");
+const BG_DARK = new THREE.Color("#0f1114");
+const UP = new THREE.Color("#15803d");
+const DOWN = new THREE.Color("#dc2626");
+
+const MAX_POINTS = 48;
+
+/** Custom event other components can dispatch to make the field pulse on live data. */
+export const MARKET_PULSE_EVENT = MSAD_EVENTS.marketPulse;
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -16,116 +27,274 @@ const fragmentShader = /* glsl */ `
   precision highp float;
   varying vec2 vUv;
   uniform float uTime;
+  uniform float uMotion;
+  uniform float uDark;
   uniform float uAspect;
-  uniform vec3 uAccent; // sRGB 0..1
-  uniform vec3 uBg;     // near-white
+  uniform float uPulse;
+  uniform float uTrend;     // -1..1 period performance
+  uniform int   uLen;       // number of valid points in uSeries
+  uniform float uSeries[${MAX_POINTS}]; // normalized 0..1 price path
+  uniform vec3  uAccent;
+  uniform vec3  uBg;
+  uniform vec3  uUp;
+  uniform vec3  uDown;
 
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-  }
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-  }
-  float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 5; i++) {
-      v += a * noise(p);
-      p *= 2.0;
-      a *= 0.5;
+  // piecewise-smooth sample of the price path at x in [0,1]
+  float sampleCurve(float x) {
+    float n = float(uLen);
+    float t = clamp(x, 0.0, 1.0) * (n - 1.0);
+    float y = uSeries[0];
+    for (int i = 0; i < ${MAX_POINTS} - 1; i++) {
+      if (i >= uLen - 1) break;
+      if (t >= float(i) && t <= float(i + 1)) {
+        float s = smoothstep(0.0, 1.0, t - float(i));
+        y = mix(uSeries[i], uSeries[i + 1], s);
+      }
     }
-    return v;
+    return y;
   }
 
   void main() {
     vec2 uv = vUv;
-    vec2 p = uv;
-    p.x *= uAspect;
-    p *= 2.4;
+    bool dark = uDark > 0.5;
 
-    float t = uTime * 0.02; // very slow, calm drift
-    vec2 q = vec2(fbm(p + t), fbm(p - t * 0.6));
-    float n = fbm(p + q * 1.2 + vec2(t * 0.35, -t * 0.2));
+    // gentle full-viewport vignette (fixed bg behind a scrolling page)
+    vec2 vc = (uv - 0.5) * vec2(uAspect, 1.0);
+    float vig = 1.0 - smoothstep(0.6, 1.3, length(vc));
 
-    // soft pastel of the accent on a near-white base — barely-there wash
-    vec3 pastel = mix(uAccent, vec3(1.0), 0.55);
-    float amt = smoothstep(0.40, 1.05, n) * 0.45;
-    vec3 col = mix(uBg, pastel, amt);
+    vec3 col = uBg;
 
-    // gentle vignette toward the base so edges stay clean
-    float d = distance(uv, vec2(0.5, 0.4));
-    col = mix(col, uBg, smoothstep(0.55, 1.15, d) * 0.6);
+    // trend-tinted line color, blended toward the user accent
+    float trend01 = smoothstep(-0.015, 0.015, uTrend);
+    vec3 lineCol = mix(mix(uDown, uUp, trend01), uAccent, 0.45);
+    vec3 pastel = mix(uAccent, vec3(1.0), dark ? 0.5 : 0.4);
 
-    gl_FragColor = vec4(col, 1.0);
+    // soft corner depth glow (dark only) so the field isn't a flat black
+    if (dark) {
+      float h = smoothstep(1.1, 0.0, length((uv - vec2(0.82, 0.72)) * vec2(uAspect, 1.0)));
+      col += pastel * h * 0.05;
+    }
+
+    // ------------------------------------------------------------------
+    // The living price line (real data) — one clean, crisp stroke
+    // ------------------------------------------------------------------
+    float curve = sampleCurve(uv.x);
+    float yLine = mix(0.30, 0.74, curve);
+    float dist = uv.y - yLine;
+    float adist = abs(dist);
+
+    // subtle gradient fill beneath the line
+    float fill = (dist < 0.0) ? (1.0 - clamp(-dist / 0.5, 0.0, 1.0)) : 0.0;
+    fill = fill * fill;
+    col = mix(col, lineCol, fill * (dark ? 0.13 : 0.06) * vig);
+
+    // tight glow + crisp bright core
+    float glow = smoothstep(0.05, 0.0, adist);
+    float core = smoothstep(0.0035, 0.0, adist);
+    float breathe = 0.9 + 0.1 * sin(uTime * 0.4) * uMotion;
+    col += lineCol * glow * glow * ((dark ? 0.42 : 0.16) + uPulse * 0.3) * breathe * vig;
+    col = mix(col, mix(lineCol, vec3(1.0), 0.4), core * (dark ? 0.95 : 0.85) * vig);
+
+    // a single soft glint travelling slowly along the stroke — calm sign of life
+    float glintPos = fract(uTime * 0.05 * uMotion);
+    float glint = smoothstep(0.22, 0.0, abs(uv.x - glintPos));
+    col += mix(lineCol, vec3(1.0), 0.6) * core * glint * (dark ? 0.5 : 0.3) * vig;
+
+    // keep the very edges clean
+    col = mix(uBg, col, vig);
+
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
   }
 `;
 
-const BG: [number, number, number] = [0.957, 0.961, 0.969]; // matches --background
-
-function hexToRgb01(hex: string): [number, number, number] {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return [0.086, 0.64, 0.29]; // fallback green
-  const int = parseInt(m[1], 16);
-  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
+function hexToColor(hex: string) {
+  const c = new THREE.Color();
+  c.set(hex);
+  return c;
 }
 
-function WavePlane({ accent }: { accent: string }) {
-  const target = useMemo(() => new THREE.Vector3(...hexToRgb01(accent)), [accent]);
+/** Normalize an indexed price path into a 0..1 array padded to MAX_POINTS. */
+function buildSeriesUniform(series?: number[]): { data: number[]; len: number; trend: number } {
+  let pts = series && series.length >= 2 ? series.slice(0, MAX_POINTS) : null;
+  if (!pts) {
+    // calm generated fallback so the field is alive without a stock loaded
+    pts = Array.from({ length: 24 }, (_, i) => {
+      const t = i / 23;
+      return 0.5 + Math.sin(t * 6.2) * 0.12 + t * 0.18;
+    });
+  }
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = max - min || 1;
+  const norm = pts.map((v) => (v - min) / span);
+  const trend = pts[pts.length - 1] - pts[0];
+  const trendNorm = Math.max(-1, Math.min(1, trend / (Math.abs(pts[0]) || 1)));
+  const data = new Array(MAX_POINTS).fill(0);
+  for (let i = 0; i < norm.length; i++) data[i] = norm[i];
+  return { data, len: norm.length, trend: trendNorm };
+}
+
+function ClearColor({ isDark }: { isDark: boolean }) {
+  const { gl } = useThree();
+  useEffect(() => {
+    gl.setClearColor(isDark ? BG_DARK : BG_LIGHT, 1);
+  }, [gl, isDark]);
+  return null;
+}
+
+function BackgroundPlane({
+  accent,
+  isDark,
+  motionEnabled,
+  series,
+  pulseRef,
+}: {
+  accent: string;
+  isDark: boolean;
+  motionEnabled: boolean;
+  series?: number[];
+  pulseRef: React.RefObject<number>;
+}) {
+  const accentTarget = useMemo(() => hexToColor(accent), [accent]);
+  const bgTarget = useMemo(() => (isDark ? BG_DARK : BG_LIGHT).clone(), [isDark]);
+  const seriesU = useMemo(() => buildSeriesUniform(series), [series]);
 
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
         vertexShader,
         fragmentShader,
-        depthTest: false,
         depthWrite: false,
+        depthTest: false,
         uniforms: {
           uTime: { value: 0 },
+          uMotion: { value: 1 },
+          uDark: { value: 0 },
           uAspect: { value: 1 },
-          uAccent: { value: target.clone() },
-          uBg: { value: new THREE.Vector3(...BG) },
+          uPulse: { value: 0 },
+          uTrend: { value: 0 },
+          uLen: { value: seriesU.len },
+          uSeries: { value: seriesU.data },
+          uAccent: { value: accentTarget.clone() },
+          uBg: { value: bgTarget.clone() },
+          uUp: { value: UP.clone() },
+          uDown: { value: DOWN.clone() },
         },
       }),
-    // built once; accent animates toward the target in useFrame
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
+  // animate the price path / trend toward the latest data
+  const trendRef = useRef(seriesU.trend);
+  useEffect(() => {
+    material.uniforms.uSeries.value = seriesU.data;
+    material.uniforms.uLen.value = seriesU.len;
+    trendRef.current = seriesU.trend;
+  }, [seriesU, material]);
+
   useFrame((state, delta) => {
-    material.uniforms.uTime.value += delta;
-    material.uniforms.uAspect.value = state.size.width / state.size.height;
-    (material.uniforms.uAccent.value as THREE.Vector3).lerp(target, 0.04);
+    material.uniforms.uTime.value += motionEnabled ? delta : delta * 0.15;
+    material.uniforms.uMotion.value = motionEnabled ? 1 : 0;
+    material.uniforms.uDark.value = isDark ? 1 : 0;
+    material.uniforms.uAspect.value = state.size.width / Math.max(state.size.height, 1);
+
+    pulseRef.current *= Math.exp(-delta * 1.8);
+    material.uniforms.uPulse.value = pulseRef.current;
+
+    const cur = material.uniforms.uTrend.value as number;
+    material.uniforms.uTrend.value = cur + (trendRef.current - cur) * 0.04;
+
+    (material.uniforms.uAccent.value as THREE.Color).lerp(accentTarget, 0.05);
+    (material.uniforms.uBg.value as THREE.Color).lerp(bgTarget, 0.08);
   });
 
   return (
-    <mesh frustumCulled={false} renderOrder={-1}>
+    <mesh frustumCulled={false} renderOrder={0}>
       <planeGeometry args={[2, 2]} />
       <primitive object={material} attach="material" />
     </mesh>
   );
 }
 
-/** Full-viewport, ultra-subtle light backdrop tinted by the chosen accent. */
-export default function SceneBackground({ accent = "#16a34a" }: { accent?: string }) {
+function useThemeDark() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      setIsDark(document.documentElement.dataset.theme === "dark");
+    };
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
+
+/**
+ * Full-viewport "living data" backdrop. Renders the stock's real price path as a
+ * glowing line with a gradient fill and particles streaming along it, over a calm
+ * aurora haze + faint grid. Works in light and dark. Pass `series` (indexed price
+ * points) to drive the line; dispatch `MARKET_PULSE_EVENT` to pulse on live data.
+ */
+export default function SceneBackground({
+  accent = BRAND.accent,
+  series,
+}: {
+  accent?: string;
+  series?: number[];
+}) {
+  const [motionEnabled, setMotionEnabled] = useState(true);
+  const isDark = useThemeDark();
+  const pulseRef = useRef<number>(0);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setMotionEnabled(!mq.matches);
+    const onChange = () => setMotionEnabled(!mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const onPulse = () => {
+      pulseRef.current = Math.min(1, pulseRef.current + 0.85);
+    };
+    window.addEventListener(MARKET_PULSE_EVENT, onPulse);
+    return () => window.removeEventListener(MARKET_PULSE_EVENT, onPulse);
+  }, []);
+
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10">
+    <div
+      className="pointer-events-none fixed inset-0 z-0"
+      style={{ width: "100vw", height: "100vh" }}
+      aria-hidden
+    >
       <Canvas
+        className="block h-full w-full"
+        orthographic
         gl={{
-          antialias: false,
+          alpha: false,
+          antialias: true,
           powerPreference: "high-performance",
           preserveDrawingBuffer: true,
         }}
-        dpr={[1, 1.5]}
-        orthographic
+        dpr={[1, 2]}
+        style={{ width: "100%", height: "100%" }}
       >
-        <WavePlane accent={accent} />
+        <ClearColor isDark={isDark} />
+        <BackgroundPlane
+          accent={accent}
+          isDark={isDark}
+          motionEnabled={motionEnabled}
+          series={series}
+          pulseRef={pulseRef}
+        />
       </Canvas>
     </div>
   );

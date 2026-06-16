@@ -9,7 +9,9 @@ import { DEFAULT_PRO_FILTERS } from "@/lib/screener/types";
 import { SCREENER_PRESETS, SCREENER_SECTORS } from "@/lib/screener/presets";
 import { industriesForSector } from "@/lib/screener/industries";
 import { getSavedScreens, type SavedScreen } from "@/lib/screener/saved-screens";
+import { BRAND } from "@/lib/brand";
 import { ExcludePanel, getExclusions } from "@/components/screener/ExcludePanel";
+import { DEFAULT_EXCLUSIONS } from "@/lib/screener/exclusions";
 import { FilterLabel, ProFilterExplainerGroup } from "@/components/screener/FilterLabel";
 import { SavedScreensBar } from "@/components/screener/SavedScreensBar";
 import { ScreenerResults } from "@/components/screener/ScreenerResults";
@@ -18,7 +20,7 @@ import { ThemeToggle, SoundToggle } from "./OnboardingModal";
 import { TickerSearch } from "./TickerSearch";
 import { AmbientOrbs } from "./AmbientOrbs";
 
-const SceneBackground = dynamic(() => import("./SceneBackground"), { ssr: false });
+const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
 
 type Mode = "learn" | "pro";
 
@@ -53,7 +55,7 @@ export function DiscoverPage() {
   const [mode, setMode] = useState<Mode>("learn");
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [pro, setPro] = useState<ProFilterState>(DEFAULT_PRO_FILTERS);
-  const [exclusions, setExclusions] = useState<string[]>([]);
+  const [exclusions, setExclusions] = useState<string[]>(() => DEFAULT_EXCLUSIONS);
   const [savedScreens, setSavedScreens] = useState<SavedScreen[]>([]);
   const [rows, setRows] = useState<ScreenerResultRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -110,10 +112,8 @@ export function DiscoverPage() {
 
   return (
     <>
-      <SceneBackground accent="#16a34a" />
+      <ContourScene accent={BRAND.accent} />
       <AmbientOrbs />
-      <div className="texture-grid pointer-events-none fixed inset-0 -z-[5]" aria-hidden />
-
       <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>

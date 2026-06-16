@@ -1,6 +1,7 @@
 export type LearningStepId =
   | "price"
   | "grade"
+  | "context"
   | "chart"
   | "metrics"
   | "modeling"
@@ -16,6 +17,12 @@ export interface LearningStep {
 export const LEARNING_STEPS: LearningStep[] = [
   { id: "price", label: "Price", hint: "Start with where the stock trades today.", sectionId: "section-price" },
   { id: "grade", label: "Grade", hint: "Get the 5-second summary vs peers.", sectionId: "section-grade" },
+  {
+    id: "context",
+    label: "Context",
+    hint: "See headlines and sentiment — then compare to the numbers.",
+    sectionId: "section-context",
+  },
   { id: "chart", label: "Chart", hint: "See performance vs a benchmark.", sectionId: "section-chart" },
   { id: "metrics", label: "Metrics", hint: "Tap any card — one expands at a time.", sectionId: "section-metrics" },
   { id: "modeling", label: "Tools", hint: "Calculators, forecast, fair value.", sectionId: "section-modeling" },

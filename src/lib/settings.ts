@@ -1,10 +1,12 @@
+import { MSAD_STORAGE } from "@/lib/brand";
+
 export type ThemeMode = "light" | "dark";
 
 const KEYS = {
-  theme: "amsad-theme",
-  sound: "amsad-sound",
-  onboarding: "amsad-onboarding-done",
-  learningPath: "amsad-learning-path",
+  theme: MSAD_STORAGE.theme,
+  sound: MSAD_STORAGE.sound,
+  onboarding: MSAD_STORAGE.onboarding,
+  learningPath: MSAD_STORAGE.learningPath,
 } as const;
 
 export function getTheme(): ThemeMode {

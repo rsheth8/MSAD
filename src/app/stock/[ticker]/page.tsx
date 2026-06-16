@@ -19,16 +19,17 @@ import { ModelingHub } from "@/components/ModelingHub";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
 import { EarningsStrip } from "@/components/EarningsStrip";
+import { NewsStrip } from "@/components/NewsStrip";
 import { LearningPathBar, scrollToSection } from "@/components/LearningPathBar";
 import { ShareButton, StoryExportButton } from "@/components/ShareExport";
 import { SoundToggle, ThemeToggle } from "@/components/OnboardingModal";
+import { BRAND, MSAD_DOM, MSAD_STORAGE } from "@/lib/brand";
 
-const SceneBackground = dynamic(() => import("@/components/SceneBackground"), {
+const ContourScene = dynamic(() => import("@/components/ContourScene"), {
   ssr: false,
 });
 
-const DEFAULT_ACCENT = "#16a34a";
-const EXPORT_ROOT_ID = "amsad-export-root";
+const EXPORT_ROOT_ID = MSAD_DOM.exportRoot;
 
 export default function StockReportPage() {
   const params = useParams<{ ticker: string }>();
@@ -36,7 +37,7 @@ export default function StockReportPage() {
   const ticker = (params.ticker ?? "AAPL").toUpperCase();
 
   const [learnMode, setLearnMode] = useState(true);
-  const [accent, setAccent] = useState(DEFAULT_ACCENT);
+  const [accent, setAccent] = useState<string>(BRAND.accent);
   const [data, setData] = useState<ReportCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +45,14 @@ export default function StockReportPage() {
   const [pathStep, setPathStep] = useState<LearningStepId>("price");
 
   useEffect(() => {
-    const saved = localStorage.getItem("amsad-accent");
+    const saved = localStorage.getItem(MSAD_STORAGE.accent);
     if (saved) setAccent(saved);
     setPathEnabled(getLearningPathEnabled());
   }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", accent);
-    localStorage.setItem("amsad-accent", accent);
+    localStorage.setItem(MSAD_STORAGE.accent, accent);
   }, [accent]);
 
   useEffect(() => {
@@ -95,36 +96,41 @@ export default function StockReportPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-12">
-      <SceneBackground accent={accent} />
+    <>
+      <ContourScene
+        accent={accent}
+        ticker={ticker}
+        series={data?.series.map((p) => p.stock)}
+        colorChange={data?.changes.day}
+      />
       <AmbientOrbs />
-      <div className="texture-grid pointer-events-none fixed inset-0 -z-[5]" aria-hidden />
 
-      <header className="mb-6 flex flex-col items-start justify-between gap-4 sm:mb-8 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <Link
-            href="/"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted transition-colors hover:text-foreground"
-          >
-            ← Back to dashboard
-          </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="sheen rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-white"
-              style={{ background: "var(--accent)" }}
+      <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-12">
+        <header className="mb-6 flex flex-col items-start gap-4 sm:mb-8">
+          <div className="w-full min-w-0">
+            <Link
+              href="/"
+              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted transition-colors hover:text-foreground"
             >
-              AMSAD
-            </span>
-            <h1 className="truncate font-display text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {data?.name ?? ticker}
-            </h1>
+              ← Back to dashboard
+            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="sheen rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-white"
+                style={{ background: "var(--accent)" }}
+              >
+                {BRAND.id}
+              </span>
+              <h1 className="truncate font-display text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                {data?.name ?? ticker}
+              </h1>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Understand any stock — and learn the &quot;why&quot; behind every number.
+            </p>
           </div>
-          <p className="mt-1 text-xs text-muted">
-            Understand any stock — and learn the &quot;why&quot; behind every number.
-          </p>
-        </div>
 
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end sm:gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2">
           <ThemeToggle />
           <SoundToggle />
           <AccentPicker value={accent} onChange={setAccent} />
@@ -174,6 +180,7 @@ export default function StockReportPage() {
       )}
 
       {data && !loading && <EarningsStrip ticker={ticker} />}
+      {data && !loading && <NewsStrip ticker={ticker} />}
 
       {loading && (
         <div className="surface animate-pulse rounded-2xl p-12 text-center text-sm text-muted">
@@ -199,6 +206,7 @@ export default function StockReportPage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

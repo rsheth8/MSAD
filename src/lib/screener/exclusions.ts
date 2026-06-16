@@ -1,4 +1,6 @@
-const KEY = "amsad-screener-exclusions";
+import { MSAD_STORAGE } from "@/lib/brand";
+
+const KEY = MSAD_STORAGE.screenerExclusions;
 
 /** Mega-caps & index ETFs most users already know. */
 export const DEFAULT_EXCLUSIONS = [

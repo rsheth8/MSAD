@@ -163,3 +163,12 @@ export const GRADE_EXPLAINER: ExplainerContent = {
   watch:
     "A grade can't see the future, news, or your own goals. Never buy or sell on a letter alone.",
 };
+
+export const NEWS_EXPLAINER: ExplainerContent = {
+  title: "News & Sentiment",
+  what: "Recent headlines, Wall Street ratings, and social buzz — context for why a stock might be in the spotlight.",
+  meaning:
+    "News explains short-term moves; your grade and metrics explain longer-term quality vs peers.",
+  watch:
+    "Headlines and analyst hype can run ahead of results. Always read the source and cross-check the numbers below.",
+};

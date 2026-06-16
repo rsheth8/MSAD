@@ -30,11 +30,11 @@ export function StockTile({
   return (
     <Link
       href={`/stock/${item.ticker}`}
-      className={`group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/10 interactive hover:scale-[1.04] hover:z-10 ${
+      className={`group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/15 backdrop-blur-xl backdrop-saturate-150 interactive hover:scale-[1.04] hover:z-10 ${
         pulse ? "ring-2 ring-white/50" : ""
       } ${large ? "h-44 w-64 sm:h-52 sm:w-72" : "h-36 w-44 sm:h-40 sm:w-52"}`}
       style={{
-        background: `linear-gradient(145deg, hsl(${hue} 55% 42%) 0%, hsl(${(hue + 40) % 360} 45% 22%) 100%)`,
+        background: `linear-gradient(145deg, hsl(${hue} 60% 46% / 0.62) 0%, hsl(${(hue + 40) % 360} 50% 24% / 0.7) 100%)`,
         boxShadow: "0 12px 32px -12px rgba(17,19,23,0.35)",
       }}
     >
@@ -42,6 +42,13 @@ export function StockTile({
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           background: "radial-gradient(circle at 20% 10%, rgba(255,255,255,0.35), transparent 55%)",
+        }}
+      />
+      {/* bottom scrim keeps white text legible over the translucent glass */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
+        style={{
+          background: "linear-gradient(to top, rgba(0,0,0,0.40), transparent)",
         }}
       />
 

@@ -3,6 +3,7 @@
 import type { CatalogRow } from "@/lib/catalog";
 import type { TileQuote } from "./StockTile";
 import { StockTile } from "./StockTile";
+import { HorizontalScrollLane } from "./HorizontalScrollLane";
 
 export function StockCarousel({
   row,
@@ -28,13 +29,16 @@ export function StockCarousel({
         <p className="text-xs text-muted">{row.subtitle}</p>
       </div>
 
-      <div className="carousel-viewport relative -mx-4 sm:-mx-6">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-background to-transparent sm:w-20" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-background to-transparent sm:w-20" />
+      <div className="relative -mx-4 sm:-mx-6">
+        <div className="pointer-events-none absolute top-0 bottom-5 left-0 z-10 w-12 bg-gradient-to-r from-background to-transparent sm:w-20" />
+        <div className="pointer-events-none absolute top-0 bottom-5 right-0 z-10 w-12 bg-gradient-to-l from-background to-transparent sm:w-20" />
 
-        <div
-          className="carousel-track flex gap-4 px-4 sm:px-6"
-          style={{ ["--carousel-duration" as string]: `${row.durationSec}s` }}
+        <HorizontalScrollLane
+          durationSec={row.durationSec}
+          loop
+          pauseOnHover
+          draggable
+          contentClassName="flex gap-4 px-4 pt-1 pb-4 sm:px-6"
         >
           {loop.map((item, i) => (
             <StockTile
@@ -46,7 +50,7 @@ export function StockCarousel({
               large={large}
             />
           ))}
-        </div>
+        </HorizontalScrollLane>
       </div>
     </section>
   );

@@ -1,0 +1,9 @@
+Space imagery — courtesy NASA (public domain), via the NASA Image and Video Library
+(images.nasa.gov / images-api.nasa.gov). NASA media is generally free to use.
+
+carina.jpg    — Cosmic Cliffs, Carina Nebula (JWST)
+pillars.jpg   — Pillars of Creation, Eagle Nebula
+orion.jpg     — Orion Nebula detail
+tarantula.jpg — Tarantula Nebula
+whirlpool.jpg — Whirlpool Galaxy (M51)
+bubble.jpg    — star-forming nebula / cluster

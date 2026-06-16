@@ -30,10 +30,26 @@ export function formatRatio(value: number, digits = 2): string {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** ISO date → "Jun 14" */
+const ISO_DATE_PREFIX = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/** ISO date (or datetime) → "Jun 14". Falls back gracefully on bad input. */
 export function formatShortDate(iso: string): string {
-  const [, mm, dd] = iso.split("-");
-  return `${MONTHS[Number(mm) - 1]} ${Number(dd)}`;
+  const trimmed = iso.trim();
+  const match = trimmed.match(ISO_DATE_PREFIX);
+  if (match) {
+    const mm = Number(match[2]);
+    const dd = Number(match[3]);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return `${MONTHS[mm - 1]} ${dd}`;
+    }
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${MONTHS[parsed.getUTCMonth()]} ${parsed.getUTCDate()}`;
+  }
+
+  return trimmed.slice(0, 12) || "—";
 }
 
 /**

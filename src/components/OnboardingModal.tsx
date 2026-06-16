@@ -15,13 +15,12 @@ import {
   setTheme,
   type ThemeMode,
 } from "@/lib/settings";
-
-const DEFAULT_ACCENT = "#16a34a";
+import { BRAND, MSAD_STORAGE } from "@/lib/brand";
 
 export function OnboardingModal({ onDone }: { onDone: () => void }) {
   const [open, setOpen] = useState(true);
   const [step, setStep] = useState(0);
-  const [accent, setAccent] = useState(DEFAULT_ACCENT);
+  const [accent, setAccent] = useState<string>(BRAND.accent);
   const [theme, setThemeLocal] = useState<ThemeMode>("light");
   const [sound, setSound] = useState(false);
   const [stars, setStars] = useState<string[]>([]);
@@ -37,7 +36,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
     setSoundEnabled(sound);
     setLearningPathEnabled(true);
     document.documentElement.style.setProperty("--accent", accent);
-    localStorage.setItem("amsad-accent", accent);
+    localStorage.setItem(MSAD_STORAGE.accent, accent);
     setWatchlist([...getWatchlist(), ...stars]);
     setOpen(false);
     onDone();
@@ -61,7 +60,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
             className="surface max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl p-6 sm:p-8"
           >
             <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-accent">
-              Welcome to AMSAD
+              Welcome to {BRAND.id}
             </div>
             <h2 className="mt-1 font-display text-xl font-bold">
               {step === 0 && "Learn stocks the friendly way"}
@@ -71,8 +70,8 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
 
             {step === 0 && (
               <p className="mt-3 text-sm text-muted">
-                Browse the dashboard, open any report, and follow the guided tour. Everything is
-                educational — never buy/sell advice.
+                {BRAND.name} — by {BRAND.authors}. Browse live quotes, open report cards, and
+                follow the guided tour. Everything is educational — never buy/sell advice.
               </p>
             )}
 
@@ -186,7 +185,7 @@ export function SoundToggle() {
   const [on, setOn] = useState(false);
 
   useEffect(() => {
-    setOn(localStorage.getItem("amsad-sound") === "1");
+    setOn(localStorage.getItem(MSAD_STORAGE.sound) === "1");
   }, []);
 
   function toggle() {

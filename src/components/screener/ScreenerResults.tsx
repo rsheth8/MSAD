@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import type { ScreenerResultRow } from "@/lib/screener/types";
 import { formatMarketCap } from "@/lib/screener/presets";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
@@ -80,7 +81,7 @@ export function ScreenerResults({
                   <div className="max-w-[160px] truncate text-[0.65rem] text-muted">{r.name}</div>
                   {!r.inCatalog && (
                     <span className="mt-1 inline-block rounded-full bg-accent/10 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
-                      New to AMSAD
+                      New to {BRAND.id}
                     </span>
                   )}
                 </td>

@@ -1,6 +1,8 @@
 import type { ProFilterState } from "./types";
 
-const KEY = "amsad-saved-screens";
+import { MSAD_STORAGE } from "@/lib/brand";
+
+const KEY = MSAD_STORAGE.savedScreens;
 
 export interface SavedScreen {
   id: string;

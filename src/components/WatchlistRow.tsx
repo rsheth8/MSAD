@@ -3,13 +3,20 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getWatchlist } from "@/lib/watchlist";
+import { MSAD_EVENTS } from "@/lib/brand";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
 import { MiniSparkline } from "./MiniSparkline";
 import type { TileQuote } from "./StockTile";
 
 type SortMode = "custom" | "change" | "alpha";
 
-export function WatchlistRow({ quotes: catalogQuotes }: { quotes: Record<string, TileQuote> }) {
+export function WatchlistRow({
+  quotes: catalogQuotes,
+  className = "",
+}: {
+  quotes: Record<string, TileQuote>;
+  className?: string;
+}) {
   const [tickers, setTickers] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Record<string, TileQuote>>({});
   const [sort, setSort] = useState<SortMode>("custom");
@@ -22,10 +29,10 @@ export function WatchlistRow({ quotes: catalogQuotes }: { quotes: Record<string,
   useEffect(() => {
     refresh();
     window.addEventListener("storage", refresh);
-    window.addEventListener("amsad-watchlist", refresh);
+    window.addEventListener(MSAD_EVENTS.watchlist, refresh);
     return () => {
       window.removeEventListener("storage", refresh);
-      window.removeEventListener("amsad-watchlist", refresh);
+      window.removeEventListener(MSAD_EVENTS.watchlist, refresh);
     };
   }, [refresh]);
 
@@ -72,7 +79,7 @@ export function WatchlistRow({ quotes: catalogQuotes }: { quotes: Record<string,
   });
 
   return (
-    <section className="mb-10">
+    <section className={className}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-bold">Your watchlist</h2>
         <div className="flex gap-1">
@@ -102,7 +109,7 @@ export function WatchlistRow({ quotes: catalogQuotes }: { quotes: Record<string,
             <Link
               key={t}
               href={`/stock/${t}`}
-              className={`surface-interactive shrink-0 rounded-2xl px-4 py-3 ${
+              className={`surface surface-interactive shrink-0 rounded-2xl px-4 py-3 ${
                 pulse[t] ? "animate-pulse ring-2 ring-accent/30" : ""
               }`}
             >
