@@ -32,15 +32,19 @@ export function authSecret(): string {
 }
 
 /**
- * The app's public origin, used to build the OAuth redirect URI. Prefers an
- * explicit env (set this in prod), then Vercel's, then the request origin.
+ * The app's public origin, used to build OAuth + brokerage redirect URIs.
+ * Prefers an explicit env (custom domain), then the request the user actually
+ * hit (so msad-alpha.vercel.app stays msad-alpha, not a deployment hash URL),
+ * then Vercel's internal hostname as a last resort.
  */
 export function appOrigin(req: Request): string {
   const explicit = process.env.AUTH_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
+  const fromRequest = new URL(req.url).origin;
+  if (fromRequest && fromRequest !== "null") return fromRequest;
   const vercel = process.env.VERCEL_URL?.trim();
   if (vercel) return `https://${vercel}`;
-  return new URL(req.url).origin;
+  return fromRequest;
 }
 
 export function redirectUri(req: Request): string {
