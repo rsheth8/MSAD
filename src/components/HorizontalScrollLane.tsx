@@ -50,7 +50,8 @@ export function HorizontalScrollLane({
   const moved = useRef(false);
   const startX = useRef(0);
   const startScroll = useRef(0);
-  const [frameSpeed, setFrameSpeed] = useState(autoSpeed ?? 0);
+  /** Auto-scroll speed in pixels per *second* (time-based, refresh-rate independent). */
+  const speedRef = useRef(0);
   const [grabbing, setGrabbing] = useState(false);
 
   const measure = useCallback(() => {
@@ -58,9 +59,11 @@ export function HorizontalScrollLane({
     if (!el) return;
     if (durationSec) {
       const half = el.scrollWidth / 2;
-      setFrameSpeed(half > 0 ? half / (durationSec * 60) : 0);
+      // Cover half the scroll width once per durationSec → px per second.
+      speedRef.current = half > 0 ? half / durationSec : 0;
     } else if (autoSpeed != null) {
-      setFrameSpeed(autoSpeed);
+      // autoSpeed is authored as px-per-frame at 60fps; normalize to px-per-second.
+      speedRef.current = autoSpeed * 60;
     }
   }, [autoSpeed, durationSec]);
 
@@ -74,23 +77,41 @@ export function HorizontalScrollLane({
   }, [measure, children]);
 
   useEffect(() => {
-    if (!frameSpeed) return;
     const el = scrollRef.current;
     if (!el) return;
     const reduce =
       typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
+
     let raf = 0;
-    const step = () => {
-      if (!paused.current && !dragging.current) {
-        el.scrollLeft += frameSpeed;
-        if (loop) wrapScroll(el);
-      }
+    let last = 0;
+    // Authoritative float position so sub-pixel motion isn't lost to scrollLeft rounding.
+    let pos = el.scrollLeft;
+    const step = (now: number) => {
       raf = requestAnimationFrame(step);
+      if (!last) {
+        last = now;
+        return;
+      }
+      // Seconds since last frame, clamped so a backgrounded tab doesn't jump on return.
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      const speed = speedRef.current;
+      if (!speed || paused.current || dragging.current) {
+        // Stay in sync with manual drags / native scrolling while not auto-advancing.
+        pos = el.scrollLeft;
+        return;
+      }
+      pos += speed * dt;
+      el.scrollLeft = pos;
+      if (loop) {
+        wrapScroll(el);
+        pos = el.scrollLeft;
+      }
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [frameSpeed, loop]);
+  }, [loop]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!draggable) return;
