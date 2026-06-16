@@ -1,5 +1,6 @@
 import { FmpError, fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
-import type { FmpPriceBar, FmpProfile, FmpQuote } from "@/lib/fmp/types";
+import { fetchHistoricalBars } from "@/lib/fmp/historical";
+import type { FmpProfile, FmpQuote } from "@/lib/fmp/types";
 import { buildOptionsChain, mockPriceBars } from "@/lib/options/chain-builder";
 import type { OptionsChainPayload } from "@/lib/options/types";
 import { getMockReportCard } from "@/lib/mock";
@@ -24,10 +25,7 @@ export async function getOptionsChain(rawTicker: string): Promise<OptionsChainPa
   const [profileRes, quoteRes, bars] = await Promise.all([
     fmpFetch<FmpProfile[]>("/profile", { symbol: ticker }),
     fmpFetch<FmpQuote[]>("/quote", { symbol: ticker }),
-    fmpFetch<FmpPriceBar[]>("/historical-price-eod/full", {
-      symbol: ticker,
-      from: from.toISOString().slice(0, 10),
-    }),
+    fetchHistoricalBars(ticker, from.toISOString().slice(0, 10)),
   ]);
 
   const profile = profileRes[0];

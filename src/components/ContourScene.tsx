@@ -1,14 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import { seedFromTicker } from "@/components/prototypes/types";
+import { ContourBg } from "@/components/prototypes/ContourBg";
 import { BRAND } from "@/lib/brand";
-
-const ContourBg = dynamic(
-  () => import("@/components/prototypes/ContourBg").then((m) => m.ContourBg),
-  { ssr: false },
-);
 
 function useThemeDark() {
   const [isDark, setIsDark] = useState(false);
@@ -66,6 +61,8 @@ export default function ContourScene({
   volatility,
   colorChange,
   ticker,
+  /** Fixed accent-leaning tint — no live sentiment or price-path coloring. */
+  neutral = false,
 }: {
   accent?: string;
   series?: number[];
@@ -74,12 +71,16 @@ export default function ContourScene({
   /** Shortest-span percent change — drives line/fill color (e.g. today's move). */
   colorChange?: number;
   ticker?: string;
+  neutral?: boolean;
 }) {
   const isDark = useThemeDark();
   const derived = useMemo(() => deriveFromSeries(series), [series]);
   const terrainTrend = trend ?? derived.trend ?? 0.16;
-  const colorTrend =
-    colorChange !== undefined ? pctToColorTrend(colorChange) : terrainTrend;
+  const colorTrend = neutral
+    ? 0.68
+    : colorChange !== undefined
+      ? pctToColorTrend(colorChange)
+      : terrainTrend;
   const v = volatility ?? derived.volatility ?? 0.22;
   const seed = useMemo(() => (ticker ? seedFromTicker(ticker) : 0.42), [ticker]);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
@@ -109,6 +110,7 @@ export default function ContourScene({
           accent={accent}
           mouseRef={mouseRef}
           series={series}
+          neutral={neutral}
         />
       </Suspense>
     </div>

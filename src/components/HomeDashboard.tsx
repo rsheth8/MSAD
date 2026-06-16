@@ -7,19 +7,21 @@ import { useRouter } from "next/navigation";
 import { allCatalogTickers, CATALOG_ROWS } from "@/lib/catalog";
 import { formatSignedPercent } from "@/lib/format";
 import { AccentPicker } from "./AccentPicker";
-import { AmbientOrbs } from "./AmbientOrbs";
+import { NeutralBackdrop } from "./NeutralBackdrop";
 import { SectorHeatmap } from "./SectorHeatmap";
 import { MarketPulse } from "./MarketPulse";
 import { SoundToggle, ThemeToggle } from "./OnboardingModal";
-import { StockCarousel } from "./StockCarousel";
 import { WatchlistRow } from "./WatchlistRow";
 import { TickerSearch } from "./TickerSearch";
 import type { TileQuote } from "./StockTile";
 import { BRAND, MSAD_EVENTS, MSAD_STORAGE } from "@/lib/brand";
 
-const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
-
 const MARKET_PULSE_EVENT = MSAD_EVENTS.marketPulse;
+
+const StockCarousel = dynamic(
+  () => import("./StockCarousel").then((m) => ({ default: m.StockCarousel })),
+  { ssr: false },
+);
 
 export function HomeDashboard() {
   const router = useRouter();
@@ -100,10 +102,9 @@ export function HomeDashboard() {
 
   return (
     <>
-      <ContourScene accent={accent} colorChange={avgDayChange} />
-      <AmbientOrbs />
+      <NeutralBackdrop accent={accent} />
 
-      <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+      <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6 sm:mb-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -146,7 +147,7 @@ export function HomeDashboard() {
 
         <div className="hero-hint surface mx-auto mb-10 max-w-2xl rounded-2xl px-6 py-4 text-center lg:mb-12">
           <p className="text-sm leading-relaxed text-muted">
-            The backdrop shifts with today&apos;s market mood. Pick a tile for a full report, use{" "}
+            Pick a tile for a full stock report, use{" "}
             <Link href="/discover" className="font-medium text-accent hover:underline">
               Discover
             </Link>{" "}

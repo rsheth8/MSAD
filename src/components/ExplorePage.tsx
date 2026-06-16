@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SCREENER_SECTORS, formatMarketCap } from "@/lib/screener/presets";
@@ -15,11 +14,9 @@ import type {
   ExploreSortKey,
 } from "@/lib/screener/explore-types";
 import { GlassCard } from "./GlassCard";
-import { AmbientOrbs } from "./AmbientOrbs";
+import { NeutralBackdrop } from "./NeutralBackdrop";
 import { ThemeToggle, SoundToggle } from "./OnboardingModal";
 import { TickerSearch } from "./TickerSearch";
-
-const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
 
 const EXCHANGES = ["NASDAQ", "NYSE", "AMEX"];
 
@@ -198,9 +195,8 @@ export function ExplorePage() {
 
   return (
     <>
-      <ContourScene accent={BRAND.accent} />
-      <AmbientOrbs />
-      <main className="relative mx-auto max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <NeutralBackdrop />
+      <main className="relative z-10 mx-auto max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Link href="/" className="text-xs text-muted hover:text-foreground">

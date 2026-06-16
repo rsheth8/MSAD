@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReportCard } from "@/lib/aggregator/report";
-import { getCachedReport, setCachedReport } from "@/lib/cache/report-cache";
+import { getReportCardWithCache } from "@/lib/aggregator/report";
 import { FmpError } from "@/lib/fmp/client";
 import type { ReportCard } from "@/lib/types";
 
@@ -17,16 +16,8 @@ export async function GET(
     return NextResponse.json({ error: "Invalid ticker symbol" }, { status: 400 });
   }
 
-  const cached = getCachedReport(ticker);
-  if (cached) {
-    return NextResponse.json(cached, {
-      headers: { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600" },
-    });
-  }
-
   try {
-    const card: ReportCard = await getReportCard(ticker);
-    setCachedReport(ticker, card);
+    const card: ReportCard = await getReportCardWithCache(ticker);
     return NextResponse.json(card, {
       headers: { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600" },
     });

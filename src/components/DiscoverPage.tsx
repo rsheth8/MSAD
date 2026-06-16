@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import type { ProFilterState, ScreenerPreset, ScreenerResultRow } from "@/lib/screener/types";
 import { DEFAULT_PRO_FILTERS } from "@/lib/screener/types";
 import { SCREENER_PRESETS, SCREENER_SECTORS } from "@/lib/screener/presets";
@@ -18,9 +17,7 @@ import { ScreenerResults } from "@/components/screener/ScreenerResults";
 import { GlassCard } from "./GlassCard";
 import { ThemeToggle, SoundToggle } from "./OnboardingModal";
 import { TickerSearch } from "./TickerSearch";
-import { AmbientOrbs } from "./AmbientOrbs";
-
-const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
+import { NeutralBackdrop } from "./NeutralBackdrop";
 
 type Mode = "learn" | "pro";
 
@@ -112,9 +109,8 @@ export function DiscoverPage() {
 
   return (
     <>
-      <ContourScene accent={BRAND.accent} />
-      <AmbientOrbs />
-      <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <NeutralBackdrop />
+      <main className="relative z-10 mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Link href="/" className="text-xs text-muted hover:text-foreground">

@@ -19,6 +19,13 @@ function getApiKey(): string {
   return key;
 }
 
+const RETRY_STATUSES = new Set([429, 503]);
+const MAX_RETRIES = 3;
+
+function retryDelayMs(attempt: number): number {
+  return 1000 * 2 ** attempt;
+}
+
 /** Typed fetch against FMP endpoints. Key stays server-side only. */
 export async function fmpFetch<T>(
   path: string,
@@ -31,12 +38,18 @@ export async function fmpFetch<T>(
   }
   url.searchParams.set("apikey", getApiKey());
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) {
-    throw new FmpError(`FMP request failed (${res.status}) for ${path}`, "HTTP");
+  let res: Response | null = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    res = await fetch(url.toString(), { cache: "no-store" });
+    if (res.ok || !RETRY_STATUSES.has(res.status) || attempt === MAX_RETRIES) break;
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt)));
   }
 
-  const data = (await res.json()) as T;
+  if (!res!.ok) {
+    throw new FmpError(`FMP request failed (${res!.status}) for ${path}`, "HTTP");
+  }
+
+  const data = (await res!.json()) as T;
   if (data === null || data === undefined) {
     throw new FmpError(`Empty response for ${path}`, "PARSE");
   }

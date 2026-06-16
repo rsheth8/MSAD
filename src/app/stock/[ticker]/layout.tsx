@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getReportCard } from "@/lib/aggregator/report";
+import { getReportCardWithCache } from "@/lib/aggregator/report";
 import { overallGrade } from "@/lib/analysis";
 import { formatCurrency } from "@/lib/format";
 
@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { ticker: raw } = await params;
   const ticker = raw.toUpperCase();
   try {
-    const card = await getReportCard(ticker);
+    const card = await getReportCardWithCache(ticker);
     const grade = overallGrade(card);
     const title = `${card.name} (${ticker})`;
     const description = `${formatCurrency(card.price)} · Grade ${grade.letter} · ${grade.summary.slice(0, 120)}`;

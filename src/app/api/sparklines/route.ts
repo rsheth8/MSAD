@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
+import { runPool } from "@/lib/async";
+import { hasFmpApiKey } from "@/lib/fmp/client";
+import { fetchHistoricalBars } from "@/lib/fmp/historical";
 import type { FmpPriceBar } from "@/lib/fmp/types";
 
 const TTL_MS = 15 * 60 * 1000;
@@ -38,14 +40,12 @@ export async function GET(req: Request) {
     from.setDate(from.getDate() - 45);
     const fromStr = from.toISOString().slice(0, 10);
 
-    await Promise.all(
-      missing.map(async (symbol) => {
+    await runPool(
+      missing,
+      async (symbol) => {
         try {
-          const bars = await fmpFetch<FmpPriceBar[]>("/historical-price-eod/full", {
-            symbol,
-            from: fromStr,
-          });
-          const spark = barsToSparkline(bars ?? []);
+          const bars = await fetchHistoricalBars(symbol, fromStr);
+          const spark = barsToSparkline(bars);
           if (spark.length) {
             cache.set(symbol, { spark, expires: Date.now() + TTL_MS });
             data[symbol] = spark;
@@ -53,7 +53,8 @@ export async function GET(req: Request) {
         } catch {
           /* skip */
         }
-      }),
+      },
+      3,
     );
   } else if (missing.length) {
     for (let i = 0; i < missing.length; i++) {

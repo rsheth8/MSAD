@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { BgProps } from "./types";
@@ -30,6 +30,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3  uBg;
   uniform vec3  uUp;
   uniform vec3  uDown;
+  uniform float uNeutral;
   uniform int   uLen;
   uniform float uSeries[${MAX_POINTS}];
 
@@ -74,7 +75,10 @@ const fragmentShader = /* glsl */ `
   vec3 sentiment(float trend01) {
     vec3 cDown = uDown;
     vec3 cFlat = vec3(0.90, 0.66, 0.18);
-    vec3 cUp = mix(uAccent, uUp, 0.35);
+    // Neutral pages: tiffany accent topo. Sentiment up: proper market green (--up).
+    vec3 cUp = uNeutral > 0.5
+      ? mix(uAccent, vec3(1.0), 0.08)
+      : mix(uUp, uAccent, 0.05);
     return trend01 < 0.5
       ? mix(cDown, cFlat, trend01 * 2.0)
       : mix(cFlat, cUp, (trend01 - 0.5) * 2.0);
@@ -224,7 +228,8 @@ function Plane({
   accent,
   mouseRef,
   series,
-}: BgProps & { series?: number[]; colorTrend: number }) {
+  neutral = false,
+}: BgProps & { series?: number[]; colorTrend: number; neutral?: boolean }) {
   const accentC = useMemo(() => hexToColor(accent), [accent]);
   const bgC = useMemo(() => (isDark ? BG_DARK : BG_LIGHT).clone(), [isDark]);
   const seriesU = useMemo(() => buildSeriesUniform(series), [series]);
@@ -250,6 +255,7 @@ function Plane({
           uBg: { value: bgC.clone() },
           uUp: { value: UP.clone() },
           uDown: { value: DOWN.clone() },
+          uNeutral: { value: neutral ? 1 : 0 },
           uLen: { value: seriesU.len },
           uSeries: { value: seriesU.data },
         },
@@ -279,6 +285,7 @@ function Plane({
     u.uColorTrend.value += (colorTrendRef.current - (u.uColorTrend.value as number)) * 0.08;
     u.uVol.value += (volRef.current - (u.uVol.value as number)) * 0.05;
     u.uDark.value = isDark ? 1 : 0;
+    u.uNeutral.value = neutral ? 1 : 0;
     (u.uAccent.value as THREE.Color).lerp(accentC, 0.08);
     (u.uBg.value as THREE.Color).lerp(isDark ? BG_DARK : BG_LIGHT, 0.12);
 
@@ -304,14 +311,19 @@ function ClearColor({ isDark }: { isDark: boolean }) {
   return null;
 }
 
-export function ContourBg(props: BgProps & { series?: number[]; colorTrend?: number }) {
+export function ContourBg(
+  props: BgProps & { series?: number[]; colorTrend?: number; neutral?: boolean },
+) {
   const colorTrend = props.colorTrend ?? props.trend;
+  const [ready, setReady] = useState(false);
+
   return (
     <Canvas
       orthographic
       gl={{ alpha: false, antialias: true, powerPreference: "high-performance" }}
-      dpr={[1, 2]}
-      className="h-full w-full"
+      dpr={[1, 1.5]}
+      className={`h-full w-full transition-opacity duration-500 ease-out ${ready ? "opacity-100" : "opacity-0"}`}
+      onCreated={() => setReady(true)}
     >
       <ClearColor isDark={props.isDark} />
       <Plane {...props} colorTrend={colorTrend} />

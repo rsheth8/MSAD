@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import type { ReportCard } from "@/lib/types";
 import { overallGrade } from "@/lib/analysis";
 import { compareMetrics, compareVerdict } from "@/lib/compare-analysis";
@@ -10,13 +9,10 @@ import { formatCurrency, formatSignedPercent } from "@/lib/format";
 import type { CompareChartData } from "@/lib/chart/types";
 import { CompareChart } from "@/components/CompareChart";
 import { GlassCard } from "@/components/GlassCard";
-import { AmbientOrbs } from "@/components/AmbientOrbs";
-import { BRAND } from "@/lib/brand";
+import { NeutralBackdrop } from "@/components/NeutralBackdrop";
 import { CompareSentiment } from "@/components/CompareSentiment";
 import { fetchJson } from "@/lib/fetch-client";
 import { isReportCard } from "@/lib/validators";
-
-const ContourScene = dynamic(() => import("@/components/ContourScene"), { ssr: false });
 
 const SENTIMENT_COLOR = {
   good: "var(--up)",
@@ -106,9 +102,8 @@ export default function CompareView() {
 
   return (
     <>
-      <ContourScene accent={BRAND.accent} />
-      <AmbientOrbs />
-      <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+      <NeutralBackdrop />
+      <main className="relative z-10 mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <Link href="/" className="text-xs text-muted hover:text-foreground">
           ← Dashboard
         </Link>

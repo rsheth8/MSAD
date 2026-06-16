@@ -18,6 +18,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { ModelingHub } from "@/components/ModelingHub";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
+import { BackdropShell } from "@/components/BackdropShell";
 import { EarningsStrip } from "@/components/EarningsStrip";
 import { NewsStrip } from "@/components/NewsStrip";
 import { LearningPathBar, scrollToSection } from "@/components/LearningPathBar";
@@ -97,6 +98,7 @@ export default function StockReportPage() {
 
   return (
     <>
+      <BackdropShell />
       <ContourScene
         accent={accent}
         ticker={ticker}

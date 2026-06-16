@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { CatalogItem } from "@/lib/catalog";
 import { tickerHue } from "@/lib/catalog";
 import { formatCurrency, formatSignedPercent } from "@/lib/format";
@@ -26,17 +27,27 @@ export function StockTile({
 }) {
   const hue = tickerHue(item.ticker);
   const up = (quote?.changePercentage ?? 0) >= 0;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const shellClass = `group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/15 backdrop-blur-xl backdrop-saturate-150 interactive hover:scale-[1.04] hover:z-10 ${
+    pulse ? "ring-2 ring-white/50" : ""
+  } ${large ? "h-44 w-64 sm:h-52 sm:w-72" : "h-36 w-44 sm:h-40 sm:w-52"}`;
+  const shellStyle = {
+    background: `linear-gradient(145deg, hsl(${hue} 60% 46% / 0.62) 0%, hsl(${(hue + 40) % 360} 50% 24% / 0.7) 100%)`,
+    boxShadow: "0 12px 32px -12px rgba(17,19,23,0.35)",
+  };
+
+  if (!mounted) {
+    return <div className={shellClass} style={shellStyle} aria-hidden />;
+  }
 
   return (
     <Link
       href={`/stock/${item.ticker}`}
-      className={`group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl border border-white/15 backdrop-blur-xl backdrop-saturate-150 interactive hover:scale-[1.04] hover:z-10 ${
-        pulse ? "ring-2 ring-white/50" : ""
-      } ${large ? "h-44 w-64 sm:h-52 sm:w-72" : "h-36 w-44 sm:h-40 sm:w-52"}`}
-      style={{
-        background: `linear-gradient(145deg, hsl(${hue} 60% 46% / 0.62) 0%, hsl(${(hue + 40) % 360} 50% 24% / 0.7) 100%)`,
-        boxShadow: "0 12px 32px -12px rgba(17,19,23,0.35)",
-      }}
+      className={shellClass}
+      style={shellStyle}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-40"

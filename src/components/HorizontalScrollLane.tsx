@@ -12,6 +12,9 @@ import {
 
 const DRAG_THRESHOLD = 4;
 
+const INTERACTIVE_SELECTOR =
+  "a, button, input, textarea, select, label, [role='button'], [role='link'], [role='option']";
+
 function wrapScroll(el: HTMLDivElement) {
   const half = el.scrollWidth / 2;
   if (half <= 0) return;
@@ -91,6 +94,8 @@ export function HorizontalScrollLane({
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!draggable) return;
+    const target = e.target as HTMLElement;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
     const el = scrollRef.current;
     if (!el) return;
     dragging.current = true;

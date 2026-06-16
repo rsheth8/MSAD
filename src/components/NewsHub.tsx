@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MoodLabel, NewsArticle, NewsCategory, NewsFeedResult } from "@/lib/news/types";
 import { CATEGORY_LABELS } from "@/lib/news/categorize";
 import { BRAND } from "@/lib/brand";
 import { formatShortDate } from "@/lib/format";
 import { GlassCard } from "./GlassCard";
-import { AmbientOrbs } from "./AmbientOrbs";
+import { NeutralBackdrop } from "./NeutralBackdrop";
 import { ThemeToggle, SoundToggle } from "./OnboardingModal";
-
-const ContourScene = dynamic(() => import("./ContourScene"), { ssr: false });
 
 const INPUT_CLASS =
   "surface w-full rounded-full px-4 py-2 text-sm text-foreground placeholder:text-muted-2 focus:outline-none focus:ring-2 focus:ring-accent/40";
@@ -166,9 +163,8 @@ export function NewsHub() {
 
   return (
     <>
-      <ContourScene accent={BRAND.accent} />
-      <AmbientOrbs />
-      <main className="relative mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <NeutralBackdrop />
+      <main className="relative z-10 mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Link href="/" className="text-xs text-muted hover:text-foreground">

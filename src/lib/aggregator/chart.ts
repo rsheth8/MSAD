@@ -1,4 +1,5 @@
 import { FmpError, fmpFetch, hasFmpApiKey } from "@/lib/fmp/client";
+import { fetchHistoricalBars } from "@/lib/fmp/historical";
 import type { FmpPriceBar, FmpProfile } from "@/lib/fmp/types";
 import {
   DEFAULT_SCATTER_X,
@@ -164,11 +165,7 @@ function closestBar(bars: FmpPriceBar[], iso: string): FmpPriceBar | null {
 }
 
 async function fetchBars(symbol: string, range: ChartRange): Promise<FmpPriceBar[]> {
-  const rows = await fmpFetch<FmpPriceBar[]>("/historical-price-eod/full", {
-    symbol,
-    from: historyFrom(range),
-  });
-  return rows ?? [];
+  return fetchHistoricalBars(symbol, historyFrom(range));
 }
 
 function buildMeta(

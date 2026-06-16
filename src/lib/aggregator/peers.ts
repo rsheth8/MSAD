@@ -1,4 +1,5 @@
 import { fmpFetch } from "@/lib/fmp/client";
+import { runPool } from "@/lib/async";
 import type {
   FmpBalanceSheet,
   FmpCashFlow,
@@ -59,15 +60,21 @@ export async function fetchPeerMetricRows(
   ];
 
   const peerSymbols = await fetchPeerSymbols(ticker);
-  const peerResults = await Promise.allSettled(
-    peerSymbols.map(async (symbol) => {
-      const bundle = await fetchFundamentals(symbol);
-      return { symbol, name: symbol, raw: extractRawMetrics(bundle) };
-    }),
+  const peerResults = await runPool(
+    peerSymbols,
+    async (symbol) => {
+      try {
+        const bundle = await fetchFundamentals(symbol);
+        return { symbol, name: symbol, raw: extractRawMetrics(bundle) };
+      } catch {
+        return null;
+      }
+    },
+    2,
   );
 
-  for (const r of peerResults) {
-    if (r.status === "fulfilled") rows.push(r.value);
+  for (const row of peerResults) {
+    if (row) rows.push(row);
   }
   return rows;
 }
@@ -79,12 +86,21 @@ export async function fetchPeerAverages(ticker: string): Promise<Partial<Record<
   const peerSymbols = await fetchPeerSymbols(ticker);
   if (!peerSymbols.length) return {};
 
-  const bundles = await Promise.allSettled(peerSymbols.map((s) => fetchFundamentals(s)));
+  const bundles = await runPool(
+    peerSymbols,
+    async (s) => {
+      try {
+        return await fetchFundamentals(s);
+      } catch {
+        return null;
+      }
+    },
+    2,
+  );
   const rawList: RawMetricValues[] = [];
 
-  for (const result of bundles) {
-    if (result.status !== "fulfilled") continue;
-    rawList.push(extractRawMetrics(result.value));
+  for (const bundle of bundles) {
+    if (bundle) rawList.push(extractRawMetrics(bundle));
   }
 
   return averageRawMetrics(rawList);
