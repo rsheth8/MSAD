@@ -30,6 +30,7 @@ const apis = [
   "/api/options/AAPL",
   "/api/auth/session",
   "/api/replay",
+  "/api/brokerage/status",
 ];
 
 const postApis = [

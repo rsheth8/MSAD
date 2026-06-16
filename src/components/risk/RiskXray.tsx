@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { requestRisk } from "@/lib/risk/request";
 import type { Holding, RiskResult } from "@/lib/risk/types";
+import { BrokerageConnect } from "@/components/brokerage/BrokerageConnect";
 import { MSAD_STORAGE } from "@/lib/brand";
 
 interface Row {
@@ -54,11 +55,7 @@ export function RiskXray() {
     setRows((r) => r.filter((_, j) => j !== i));
   }
 
-  async function analyze(e?: React.FormEvent) {
-    e?.preventDefault();
-    const holdings: Holding[] = rows
-      .map((r) => ({ ticker: r.ticker.toUpperCase().trim(), weight: Number(r.weight) || 0 }))
-      .filter((h) => h.ticker && h.weight > 0);
+  async function runAnalysis(holdings: Holding[]) {
     if (holdings.length === 0) {
       setError("Add at least one holding with a weight.");
       return;
@@ -80,11 +77,28 @@ export function RiskXray() {
     }
   }
 
+  function analyze(e?: React.FormEvent) {
+    e?.preventDefault();
+    const holdings: Holding[] = rows
+      .map((r) => ({ ticker: r.ticker.toUpperCase().trim(), weight: Number(r.weight) || 0 }))
+      .filter((h) => h.ticker && h.weight > 0);
+    void runAnalysis(holdings);
+  }
+
+  /** Real holdings imported from a linked brokerage — fill the editor and run. */
+  function handleImport(holdings: { ticker: string; weight: number }[]) {
+    setRows(holdings.map((h) => ({ ticker: h.ticker, weight: String(Math.round(h.weight * 10) / 10) })));
+    void runAnalysis(holdings);
+  }
+
   return (
     <div className="space-y-6">
       <form onSubmit={analyze} className="surface rounded-2xl p-5">
         <h2 className="font-display text-sm font-semibold text-foreground">Your holdings</h2>
         <p className="text-[0.7rem] text-muted">Weights are relative — they don&apos;t need to add to 100.</p>
+        <div className="mt-3">
+          <BrokerageConnect onImport={handleImport} />
+        </div>
         <div className="mt-3 space-y-2">
           {rows.map((row, i) => (
             <div key={i} className="flex items-center gap-2">
