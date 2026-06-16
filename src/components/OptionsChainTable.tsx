@@ -30,15 +30,23 @@ function LegCell({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-lg px-2 py-1.5 text-left transition-colors ${
+      className={`w-full rounded-lg px-2 py-2 text-left transition-colors ${
         selected ? "bg-accent/15 ring-1 ring-accent/40" : "hover:bg-background"
       }`}
     >
-      <div className="font-mono text-sm font-semibold tabular-nums">{formatCurrency(quote.premium)}</div>
-      <div className="mt-0.5 flex flex-wrap gap-1 text-[0.6rem] text-muted">
-        <span>Δ {quote.delta > 0 ? "+" : ""}{quote.delta.toFixed(2)}</span>
-        <span>IV {formatPercent(quote.iv, 0)}</span>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-mono text-sm font-semibold tabular-nums">{formatCurrency(quote.premium)}</span>
         <MoneynessBadge tag={quote.moneyness} />
+      </div>
+      <div className="mt-1 flex flex-wrap gap-x-2 text-[0.6rem] text-muted">
+        <span>
+          Δ {quote.delta > 0 ? "+" : ""}
+          {quote.delta.toFixed(2)}
+        </span>
+        <span>IV {formatPercent(quote.iv, 0)}</span>
+      </div>
+      <div className="mt-0.5 font-mono text-[0.55rem] tabular-nums text-muted/90">
+        Γ {quote.gamma.toFixed(3)} · Θ {quote.theta.toFixed(2)} · ν {quote.vega.toFixed(2)}
       </div>
     </button>
   );
@@ -60,7 +68,7 @@ export function OptionsChainTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] text-xs">
+      <table className="w-full min-w-[480px] text-xs">
         <thead>
           <tr className="border-b border-border text-[0.65rem] uppercase tracking-wider text-muted">
             <th className="pb-2 pr-2 text-left font-medium">Strike</th>
@@ -78,9 +86,7 @@ export function OptionsChainTable({
               >
                 <td className="py-2 pr-2 align-middle">
                   <div className="font-mono font-semibold tabular-nums">{formatCurrency(row.strike)}</div>
-                  {isATM && (
-                    <div className="text-[0.6rem] text-accent">Near spot</div>
-                  )}
+                  {isATM && <div className="text-[0.6rem] text-accent">Near spot</div>}
                 </td>
                 <td className="py-1 px-1 align-middle">
                   <LegCell

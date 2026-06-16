@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ExplainerContent } from "@/lib/explanations";
+import { Chevron } from "./Chevron";
 import { useExplainerGroup } from "./ExplainerGroup";
 
 /**
@@ -30,6 +31,11 @@ export function Explainer({
   const groupOpen = group && id ? group.openId === id : false;
   const open = isControlled ? controlledOpen : group && id ? groupOpen : localOpen;
 
+  // In a group, hide sibling triggers while another explainer is open.
+  if (group && id && group.openId !== null && group.openId !== id) {
+    return null;
+  }
+
   function toggle() {
     if (isControlled) {
       onOpenChange?.(!controlledOpen);
@@ -48,12 +54,13 @@ export function Explainer({
         type="button"
         aria-expanded={open}
         onClick={toggle}
-        className="btn-ghost interactive inline-flex items-center gap-1 px-2.5 py-1 text-[0.65rem]"
+        className="btn-ghost interactive inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.65rem]"
       >
         <span aria-hidden className="text-accent">
           ⓘ
         </span>
         {open ? "Hide" : "What is this?"}
+        <Chevron open={open} size={12} className="opacity-70" />
       </button>
 
       <AnimatePresence initial={false}>

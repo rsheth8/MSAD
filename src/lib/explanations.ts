@@ -146,6 +146,42 @@ export const DELTA_EXPLAINER: ExplainerContent = {
     "Delta changes as the stock moves and time passes — it's a snapshot, not a fixed rule.",
 };
 
+export const GAMMA_EXPLAINER: ExplainerContent = {
+  title: "Gamma (Γ)",
+  what: "Gamma measures how fast delta changes when the stock moves. High gamma means delta can swing quickly — common near at-the-money options close to expiration.",
+  meaning:
+    "High gamma = your option's sensitivity to the stock can accelerate. Useful for traders, but it makes outcomes harder to predict for beginners.",
+  watch:
+    "Gamma is highest for at-the-money options near expiry — small stock moves can cause big option price swings.",
+};
+
+export const THETA_EXPLAINER: ExplainerContent = {
+  title: "Theta (Θ)",
+  what: "Theta is the estimated daily time decay — how much an option loses in value each day just from time passing, all else equal.",
+  meaning:
+    "Negative theta hurts option buyers (value erodes over time). Positive theta helps sellers who collect premium.",
+  watch:
+    "Time decay accelerates in the final weeks before expiration — especially for at-the-money options.",
+};
+
+export const VEGA_EXPLAINER: ExplainerContent = {
+  title: "Vega (ν)",
+  what: "Vega estimates how much an option's price changes when implied volatility moves 1 percentage point.",
+  meaning:
+    "Higher vega means the option is more sensitive to volatility swings. Long options generally benefit from rising IV.",
+  watch:
+    "Buying options when IV is already high means you're paying a volatility premium that can deflate even if the stock barely moves.",
+};
+
+export const TREND_EXPLAINER: ExplainerContent = {
+  title: "50 & 200-Day Moving Averages",
+  what: "Simple moving averages (SMAs) smooth out daily price noise. The 50-day average reflects the medium-term trend; the 200-day average reflects the long-term trend.",
+  meaning:
+    "Price above both averages with the 50-day above the 200-day (a 'golden cross') often signals an uptrend. The opposite ('death cross') often signals a downtrend.",
+  watch:
+    "Moving averages lag behind the market — they describe what already happened, not what will happen next. Use them as context, not a buy/sell signal.",
+};
+
 export const STRIKE_PREMIUM_EXPLAINER: ExplainerContent = {
   title: "Strike, Premium & Expiry",
   what: "Strike = the locked-in price you can buy/sell at. Premium = the per-share price you pay for the contract (×100 for one contract). Expiry = the deadline.",

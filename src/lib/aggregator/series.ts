@@ -87,9 +87,9 @@ export function buildSeriesAndChanges(
   };
 }
 
-/** Fetch ~15 months of daily closes for chart + change calculations. */
+/** Fetch ~18 months of daily closes for SMA-200 + change calculations. */
 export function historyFromDate(): string {
   const d = new Date();
-  d.setMonth(d.getMonth() - 15);
+  d.setMonth(d.getMonth() - 18);
   return d.toISOString().slice(0, 10);
 }

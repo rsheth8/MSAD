@@ -145,7 +145,7 @@ export function ReportCardView({
           <NewsSection ticker={data.ticker} data={data} learnMode={learnMode} />
         </motion.div>
 
-        {/* Interactive chart */}
+        {/* Interactive chart (includes 50/200-day trend strip) */}
         <motion.div variants={fadeUp} custom={3} className="mt-4" id="section-chart">
           <ChartPanel data={data} learnMode={learnMode} />
         </motion.div>

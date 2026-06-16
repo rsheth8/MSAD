@@ -7,6 +7,7 @@ import { formatMetricDisplay, formatSignedPercent } from "@/lib/format";
 import { metricRead } from "@/lib/analysis";
 import { METRIC_EXPLAINERS } from "@/lib/explanations";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { Chevron } from "./Chevron";
 import { GlassCard } from "./GlassCard";
 import { MetricTrendBadge } from "./MetricTrendBadge";
 
@@ -100,9 +101,7 @@ export function MetricCard({
         {expandable && !expanded && (
           <div className="mt-3 flex items-center justify-between text-[0.65rem] font-medium text-muted">
             <span>Tap to learn more</span>
-            <motion.span animate={{ rotate: 0 }} className="text-accent">
-              ↓
-            </motion.span>
+            <Chevron open={false} size={14} className="text-accent" />
           </div>
         )}
 
@@ -139,9 +138,10 @@ export function MetricCard({
                     e.stopPropagation();
                     onToggle?.();
                   }}
-                  className="btn-ghost interactive text-[0.65rem]"
+                  className="btn-ghost interactive inline-flex items-center gap-1.5 text-[0.65rem]"
                 >
-                  Collapse ↑
+                  Collapse
+                  <Chevron open size={14} />
                 </button>
               </div>
             </motion.div>

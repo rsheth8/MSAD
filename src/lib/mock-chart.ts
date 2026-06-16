@@ -72,14 +72,21 @@ function mockComparePoints(ticker: string, range: ChartRange): CompareChartPoint
   const bDrift = 0.006;
 
   const points: CompareChartPoint[] = [];
+  const aHistory: number[] = [];
   for (let i = 0; i < n; i++) {
     if (i > 0) {
       a *= 1 + aDrift + (rand() - 0.5) * 0.04;
       b *= 1 + bDrift + (rand() - 0.5) * 0.02;
     }
+    aHistory.push(a);
     const date = new Date(now - (n - 1 - i) * msPerPoint);
     peak = Math.max(peak, a);
     const drawdown = Math.round(((a - peak) / peak) * 1000) / 10;
+    const sma = (window: number) => {
+      if (aHistory.length < window) return null;
+      const slice = aHistory.slice(-window);
+      return Math.round((slice.reduce((s, v) => s + v, 0) / window) * 100) / 100;
+    };
     points.push({
       date: date.toISOString().slice(0, 10),
       label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
@@ -89,6 +96,8 @@ function mockComparePoints(ticker: string, range: ChartRange): CompareChartPoint
       bRaw: Math.round(b * 4.2 * 100) / 100,
       volume: Math.round(rand() * 50_000_000),
       drawdown,
+      sma50Indexed: sma(50),
+      sma200Indexed: sma(200),
     });
   }
   return points;

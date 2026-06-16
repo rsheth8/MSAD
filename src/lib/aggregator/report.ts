@@ -8,6 +8,7 @@ import { buildOptionsData } from "./options";
 import { buildMetrics, extractRawMetrics } from "./metrics";
 import { fetchFundamentals, fetchPeerAverages } from "./peers";
 import { buildSeriesAndChanges, historyFromDate } from "./series";
+import { buildTrendMetrics } from "./trend";
 
 function normalizeTicker(raw: string): string {
   return (raw || "").toUpperCase().trim().replace(/^\$/, "");
@@ -44,6 +45,7 @@ export async function getReportCard(rawTicker: string): Promise<ReportCard> {
   const raw = extractRawMetrics(fundamentals);
   const metrics = buildMetrics(raw, peerAvgs);
   const { series, changes } = buildSeriesAndChanges(stockHist ?? [], benchHist ?? [], price);
+  const trend = buildTrendMetrics(stockHist ?? [], price);
 
   // FMP options-chain is often empty on lower tiers — derive educational contracts from live price/beta.
   const options = buildOptionsData(price, beta);
@@ -60,6 +62,7 @@ export async function getReportCard(rawTicker: string): Promise<ReportCard> {
       ...changes,
       day: quote?.changePercentage ?? changes.week,
     },
+    trend,
     series,
     metrics,
     options,

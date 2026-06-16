@@ -1,6 +1,7 @@
 import type { ReportCard, SeriesPoint, Metric } from "./types";
 import { formatMetricDisplay } from "./format";
 import { buildOptionsData } from "./aggregator/options";
+import { mockTrendMetrics } from "./aggregator/trend";
 
 /**
  * Deterministic mock report card generator.
@@ -129,6 +130,7 @@ export function getMockReportCard(rawTicker = "AAPL"): ReportCard {
       month: Math.round(monthChange * 10) / 10,
       year: Math.round(yearChange * 10) / 10,
     },
+    trend: mockTrendMetrics(price, rand),
     series,
     metrics: buildMetrics(rand),
     options: buildOptionsData(price, beta, rand),

@@ -112,6 +112,7 @@ function buildComparePoints(
   barsA: FmpPriceBar[],
   barsB: FmpPriceBar[],
   range: ChartRange,
+  dailyBarsA?: FmpPriceBar[],
 ): CompareChartPoint[] {
   const a = resampleBars(barsA, range);
   const bMap = new Map(resampleBars(barsB, range).map((x) => [x.date, x]));
@@ -136,7 +137,7 @@ function buildComparePoints(
     const drawdown = Math.round(((aIndexed - peakA) / peakA) * 1000) / 10;
     maxDrawdown = Math.min(maxDrawdown, drawdown);
 
-    return {
+    const point: CompareChartPoint = {
       date,
       label: formatLabel(date, range),
       aIndexed,
@@ -146,7 +147,37 @@ function buildComparePoints(
       volume: ba.volume ?? 0,
       drawdown,
     };
+
+    if (dailyBarsA?.length) {
+      point.sma50Indexed = smaIndexedAtDate(dailyBarsA, date, 50, baseA);
+      point.sma200Indexed = smaIndexedAtDate(dailyBarsA, date, 200, baseA);
+    }
+
+    return point;
   });
+}
+
+function smaIndexedAtDate(
+  dailyBars: FmpPriceBar[],
+  date: string,
+  window: number,
+  baseClose: number,
+): number | null {
+  const closes: number[] = [];
+  for (const bar of sortedAsc(dailyBars)) {
+    if (bar.date > date) break;
+    closes.push(bar.close);
+  }
+  if (closes.length < window || !baseClose) return null;
+  const slice = closes.slice(-window);
+  const sma = slice.reduce((sum, c) => sum + c, 0) / window;
+  return Math.round((sma / baseClose) * 10000) / 100;
+}
+
+function smaHistoryFrom(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 18);
+  return d.toISOString().slice(0, 10);
 }
 
 function closestBar(bars: FmpPriceBar[], iso: string): FmpPriceBar | null {
@@ -275,7 +306,9 @@ export async function getChartPayload(req: ChartRequest): Promise<FullChartPaylo
         : symB;
 
   const [barsA, barsB] = await Promise.all([fetchBars(symA, range), fetchBars(symB, range)]);
-  const points = buildComparePoints(barsA, barsB, range);
+  const dailyBarsA =
+    symA === ticker ? await fetchHistoricalBars(symA, smaHistoryFrom()) : undefined;
+  const points = buildComparePoints(barsA, barsB, range, dailyBarsA);
 
   if (!points.length) throw new FmpError("Insufficient chart data", "PARSE");
 

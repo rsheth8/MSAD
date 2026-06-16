@@ -24,6 +24,10 @@ export interface CompareChartPoint {
   volume: number;
   /** % below running peak on series A (≤ 0) */
   drawdown: number;
+  /** 50-day SMA indexed to match series A (stock only) */
+  sma50Indexed?: number | null;
+  /** 200-day SMA indexed to match series A (stock only) */
+  sma200Indexed?: number | null;
 }
 
 export interface CompareChartData {

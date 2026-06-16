@@ -58,9 +58,11 @@ function CompareTooltip({
 export function CompareChart({
   data,
   showVolume,
+  showMovingAverages = true,
 }: {
   data: CompareChartData;
   showVolume: boolean;
+  showMovingAverages?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -121,6 +123,32 @@ export function CompareChart({
             dot={false}
             animationDuration={900}
           />
+          {showMovingAverages && (
+            <>
+              <Line
+                yAxisId="price"
+                type="monotone"
+                dataKey="sma50Indexed"
+                stroke="var(--up)"
+                strokeWidth={1.25}
+                strokeDasharray="6 3"
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+              <Line
+                yAxisId="price"
+                type="monotone"
+                dataKey="sma200Indexed"
+                stroke="var(--down)"
+                strokeWidth={1.25}
+                strokeDasharray="2 4"
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            </>
+          )}
           <Area
             yAxisId="price"
             type="monotone"

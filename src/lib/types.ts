@@ -32,6 +32,21 @@ export interface SeriesPoint {
   sp500: number;
 }
 
+export type TrendSentiment = "bullish" | "bearish" | "mixed";
+
+/** 50/200-day simple moving average trend read. */
+export interface TrendMetrics {
+  sma50: number | null;
+  sma200: number | null;
+  /** % above (+) or below (−) the 50-day SMA */
+  priceVsSma50Pct: number | null;
+  /** % above (+) or below (−) the 200-day SMA */
+  priceVsSma200Pct: number | null;
+  sentiment: TrendSentiment;
+  /** plain-English trend summary */
+  summary: string;
+}
+
 /** Trailing price changes, as percentages. */
 export interface PriceChanges {
   /** today's session change (shortest span — drives backdrop color) */
@@ -76,6 +91,8 @@ export interface ReportCard {
   /** stock's volatility relative to the market (1 = moves with the market) */
   beta: number;
   changes: PriceChanges;
+  /** 50/200-day moving average trend signals */
+  trend: TrendMetrics;
   /** 13 monthly points (start + 12 months) for the 12M graph */
   series: SeriesPoint[];
   /** exactly the 8 metrics from the template, in display order */

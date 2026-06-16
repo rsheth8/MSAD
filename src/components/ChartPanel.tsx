@@ -17,6 +17,7 @@ import { CompareChart } from "./CompareChart";
 import { Explainer } from "./Explainer";
 import { GlassCard } from "./GlassCard";
 import { ScatterChartView } from "./ScatterChartView";
+import { TrendStrip } from "./TrendPanel";
 
 import { MSAD_STORAGE } from "@/lib/brand";
 
@@ -30,6 +31,7 @@ interface ChartPrefs {
   scatterX: ScatterMetricKey;
   scatterY: ScatterMetricKey;
   showVolume: boolean;
+  showMovingAverages: boolean;
 }
 
 function loadPrefs(): Partial<ChartPrefs> {
@@ -102,6 +104,7 @@ export function ChartPanel({
   const [scatterX, setScatterX] = useState<ScatterMetricKey>(saved.scatterX ?? "pe");
   const [scatterY, setScatterY] = useState<ScatterMetricKey>(saved.scatterY ?? "roe");
   const [showVolume, setShowVolume] = useState(saved.showVolume ?? false);
+  const [showMovingAverages, setShowMovingAverages] = useState(saved.showMovingAverages ?? true);
   const [useDefault, setUseDefault] = useState(saved.useDefault ?? !saved.seriesB);
   const [payload, setPayload] = useState<FullChartPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,9 +154,19 @@ export function ChartPanel({
   }, [fetchChart]);
 
   useEffect(() => {
-    savePrefs({ range, mode, seriesA, seriesB, scatterX, scatterY, showVolume });
-    syncChartUrl({ range, mode, seriesA, seriesB, scatterX, scatterY, showVolume, useDefault });
-  }, [range, mode, seriesA, seriesB, scatterX, scatterY, showVolume, useDefault]);
+    savePrefs({ range, mode, seriesA, seriesB, scatterX, scatterY, showVolume, showMovingAverages });
+    syncChartUrl({
+      range,
+      mode,
+      seriesA,
+      seriesB,
+      scatterX,
+      scatterY,
+      showVolume,
+      showMovingAverages,
+      useDefault,
+    });
+  }, [range, mode, seriesA, seriesB, scatterX, scatterY, showVolume, showMovingAverages, useDefault]);
 
   function resetToDefault() {
     const preset = payload?.meta.defaultPreset;
@@ -186,6 +199,8 @@ export function ChartPanel({
   return (
     <div>
       <GlassCard className="flex flex-col p-4 sm:p-5">
+        <TrendStrip trend={data.trend} currency={data.currency} learnMode={learnMode} />
+
         {/* Controls */}
         <div className="mb-3 flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -286,6 +301,15 @@ export function ChartPanel({
               <label className="ml-auto flex items-center gap-1.5 text-muted">
                 <input
                   type="checkbox"
+                  checked={showMovingAverages}
+                  onChange={(e) => setShowMovingAverages(e.target.checked)}
+                  className="accent-[var(--accent)]"
+                />
+                50/200 MA
+              </label>
+              <label className="flex items-center gap-1.5 text-muted">
+                <input
+                  type="checkbox"
                   checked={showVolume}
                   onChange={(e) => setShowVolume(e.target.checked)}
                   className="accent-[var(--accent)]"
@@ -335,6 +359,18 @@ export function ChartPanel({
             <span className="rounded-full bg-background px-2 py-0.5 font-mono text-down">
               Max drawdown: {formatSignedPercent(compare.maxDrawdown)}
             </span>
+            {showMovingAverages && compare.seriesA.key === "stock" && (
+              <>
+                <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 font-mono text-up">
+                  <span className="inline-block h-px w-3 border-t border-dashed border-current" aria-hidden />
+                  50d
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 font-mono text-down">
+                  <span className="inline-block h-px w-3 border-t border-dotted border-current" aria-hidden />
+                  200d
+                </span>
+              </>
+            )}
           </div>
         )}
 
@@ -371,7 +407,7 @@ export function ChartPanel({
               </div>
             )}
             {!loading && !error && compare && mode === "compare" && (
-              <CompareChart data={compare} showVolume={showVolume} />
+              <CompareChart data={compare} showVolume={showVolume} showMovingAverages={showMovingAverages} />
             )}
             {!loading && !error && payload?.chart?.mode === "scatter" && mode === "scatter" && (
               <ScatterChartView data={payload.chart} />

@@ -2,7 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Chevron } from "./Chevron";
 import { GlassCard } from "./GlassCard";
+
+const ease = [0.22, 1, 0.36, 1] as const;
 
 export function CollapsibleSection({
   title,
@@ -46,38 +49,40 @@ export function CollapsibleSection({
             <h3 className="font-display text-xl font-bold tracking-tight text-foreground">{title}</h3>
             {badge}
           </div>
-          {subtitle && <p className="mt-1 text-xs text-muted">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-xs leading-relaxed text-muted">{subtitle}</p>}
         </div>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="ml-3 shrink-0 text-muted transition-colors group-hover:text-foreground"
-          aria-hidden
-        >
-          ▼
-        </motion.span>
+        <Chevron
+          open={open}
+          className="ml-3 transition-colors group-hover:text-foreground"
+        />
       </button>
 
-      {!open && preview && (
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1 }}
-          className="mt-4 border-t border-border pt-4"
-        >
-          {preview}
-        </motion.div>
-      )}
+      <AnimatePresence initial={false}>
+        {!open && preview && (
+          <motion.div
+            key="preview"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.26, ease }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 border-t border-border pt-4">{preview}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
+            key="content"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.32, ease }}
             className="overflow-hidden"
           >
-            <div className="mt-6 space-y-4">{children}</div>
+            <div className="mt-6 space-y-5">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
