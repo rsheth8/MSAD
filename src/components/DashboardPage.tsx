@@ -60,6 +60,12 @@ export function DashboardPage() {
               <Link href="/practice" className="btn-primary text-xs">
                 Test a hypothesis →
               </Link>
+              <Link href="/replay" className="btn-ghost interactive text-xs">
+                Market Replay
+              </Link>
+              <Link href="/risk" className="btn-ghost interactive text-xs">
+                Risk X-ray
+              </Link>
               <Link href="/discover" className="btn-ghost interactive text-xs">
                 Find a stock
               </Link>
