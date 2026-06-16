@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { seedFromTicker } from "@/components/prototypes/types";
 import { ContourBg } from "@/components/prototypes/ContourBg";
 import { BRAND } from "@/lib/brand";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 function useThemeDark() {
   const [isDark, setIsDark] = useState(false);
@@ -74,6 +75,7 @@ export default function ContourScene({
   neutral?: boolean;
 }) {
   const isDark = useThemeDark();
+  const isMobile = useIsMobile();
   const derived = useMemo(() => deriveFromSeries(series), [series]);
   const terrainTrend = trend ?? derived.trend ?? 0.16;
   const colorTrend = neutral
@@ -93,6 +95,11 @@ export default function ContourScene({
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
+
+  // On phones the always-on full-screen shader saturates the GPU and makes the
+  // whole page (carousels especially) stutter. Skip WebGL entirely there — the
+  // static CSS BackdropShell (rendered separately) stands in.
+  if (isMobile) return null;
 
   return (
     <div

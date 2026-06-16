@@ -9,6 +9,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const DRAG_THRESHOLD = 4;
 
@@ -53,6 +54,9 @@ export function HorizontalScrollLane({
   /** Auto-scroll speed in pixels per *second* (time-based, refresh-rate independent). */
   const speedRef = useRef(0);
   const [grabbing, setGrabbing] = useState(false);
+  // On phones, JS-driven scrollLeft fights the platform and stutters. Hand the
+  // lane to the browser: native horizontal swipe with momentum, no auto-scroll.
+  const isMobile = useIsMobile();
 
   const measure = useCallback(() => {
     const el = scrollRef.current;
@@ -77,6 +81,7 @@ export function HorizontalScrollLane({
   }, [measure, children]);
 
   useEffect(() => {
+    if (isMobile) return; // mobile uses native swipe scrolling, not JS auto-scroll
     const el = scrollRef.current;
     if (!el) return;
     const reduce =
@@ -111,10 +116,10 @@ export function HorizontalScrollLane({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [loop]);
+  }, [loop, isMobile]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!draggable) return;
+    if (!draggable || isMobile) return; // let native touch scrolling handle it
     const target = e.target as HTMLElement;
     if (target.closest(INTERACTIVE_SELECTOR)) return;
     const el = scrollRef.current;
@@ -163,9 +168,14 @@ export function HorizontalScrollLane({
         onPointerCancel={endDrag}
         onClickCapture={onClickCapture}
         className={`scroll-lane overflow-x-auto ${
-          draggable ? (grabbing ? "cursor-grabbing select-none" : "cursor-grab") : ""
+          !isMobile && draggable ? (grabbing ? "cursor-grabbing select-none" : "cursor-grab") : ""
         } ${contentClassName}`}
-        style={{ touchAction: draggable ? "pan-y" : undefined }}
+        style={{
+          // Mobile: allow native horizontal swipe + momentum. Desktop drag: keep
+          // vertical panning to the page while we own horizontal via pointer.
+          touchAction: isMobile ? "pan-x pan-y" : draggable ? "pan-y" : undefined,
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {children}
       </div>
