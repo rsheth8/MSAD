@@ -1,5 +1,10 @@
 # MSAD — Mishra & Sheth Analysis Dashboard
 
+<p align="center">
+  <img src="docs/brand/logo.png" width="168" alt="MSAD">
+</p>
+
+
 Beginner-friendly stock research and practice dashboard, built with Next.js — learn to analyze stocks and test judgment before risking real money.
 
 | | |
@@ -171,3 +176,10 @@ See `.env.example` for full details, including required OAuth redirect URIs.
 - **Guest-first persistence**: progress is usable immediately via `localStorage`; signing in with Google upgrades the same data model to server-side, cross-device storage via `/api/profile` and KV.
 - **Custom auth, not a library**: Google OAuth and session cookies are implemented directly in `src/lib/auth/` rather than through a third-party auth framework.
 - **Backtesting is intentionally caveated**: the Hypothesis Lab surfaces survivorship bias, overfitting, cost, and look-ahead caveats alongside every result rather than presenting a backtest as predictive.
+
+## Contributing
+
+PRs and issues welcome. How to run tests, env vars, and the expected layout: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Don't commit `.env`, API keys, or personal recordings.
+
