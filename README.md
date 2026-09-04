@@ -1,18 +1,25 @@
-# MSAD — Mishra & Sheth Analysis Dashboard
-
 <p align="center">
-  <img src="docs/brand/logo.png" width="168" alt="MSAD">
+  <img src="docs/brand/logo.png" width="128" alt="MSAD">
 </p>
 
+<h1 align="center">MSAD</h1>
 
-Beginner-friendly stock research and practice dashboard, built with Next.js — learn to analyze stocks and test judgment before risking real money.
+<p align="center">
+  A trading gym, not a tip service. Practice the call before the money.
+</p>
 
-| | |
-| --- | --- |
-| **Authors** | [Rahil Sheth](https://github.com/rsheth8) and Aastik Mishra |
-| **Live** | [msad-beta.vercel.app](https://msad-beta.vercel.app) |
-| **Stack** | Next.js, React, TypeScript, Tailwind, FMP, Anthropic (optional), SnapTrade read-only (optional) |
-| **Status** | Educational only. Never places trades. Runs on sample data if you have no API keys. |
+<p align="center">
+  <a href="https://msad-beta.vercel.app">Live</a>&nbsp;·&nbsp;<a href="https://github.com/rsheth8/MSAD">Source</a>&nbsp;·&nbsp;<a href="CONTRIBUTING.md">Run locally</a>
+</p>
+
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-black?style=flat-square&logo=nextdotjs">
+  <img alt="Education" src="https://img.shields.io/badge/never%20places-trades-6b5c48?style=flat-square">
+</p>
+
+<p align="center"><sub>Rahil Sheth &amp; Aastik Mishra. Sample data if you have no keys.</sub></p>
+
+---
 
 ## What this is
 
