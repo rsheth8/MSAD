@@ -1,6 +1,13 @@
 # MSAD — Mishra & Sheth Analysis Dashboard
 
-A beginner-friendly stock research and trading-practice dashboard, built with Next.js — helps people learn to analyze stocks and test their judgment before risking real money. **Educational only, not financial advice.**
+Beginner-friendly stock research and practice dashboard, built with Next.js — learn to analyze stocks and test judgment before risking real money.
+
+| | |
+| --- | --- |
+| **Authors** | [Rahil Sheth](https://github.com/rsheth8) and Aastik Mishra |
+| **Live** | [msad-beta.vercel.app](https://msad-beta.vercel.app) |
+| **Stack** | Next.js, React, TypeScript, Tailwind, FMP, Anthropic (optional), SnapTrade read-only (optional) |
+| **Status** | Educational only. Never places trades. Runs on sample data if you have no API keys. |
 
 ## What this is
 
